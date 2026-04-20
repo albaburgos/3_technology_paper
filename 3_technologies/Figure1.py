@@ -77,7 +77,6 @@ def compute_radio_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux
 
 
 def compute_tau_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir):
-    # TAMBO-based ebar proxy used for Glashow probability per energy.
     tambo_angle = 4 * np.pi / 0.1
     tambo_years = 1.0
     tambo_e_base = np.array([3e5, 4e5, 1e6, 2e6, 4e6, 5e6, 6e6, 7e6, 8e6, 1e7, 3e7, 1e8, 4e8, 1e9], dtype=float)
@@ -109,7 +108,7 @@ def compute_tau_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_m
     nz = cnt_per_bin > 0
     p_vebar_binned[nz] = sum_per_bin[nz] / cnt_per_bin[nz]
 
-    eff9_path = os.path.join(base_dir, "effareas9.csv")
+    eff9_path = os.path.join(base_dir, "effareasEarth.csv")
     Et, A_mut, A_taut, A_et = read_effarea_csv(eff9_path)
     edgest = geometric_edges_from_centers(Et)
 
@@ -165,6 +164,7 @@ def main():
         captions=("(1) In-Ice Radio & Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
         ),
         savepath="MC_outputs/figure8.png",
+        textbox_text="high flux"
     )
 
 

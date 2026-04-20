@@ -11,12 +11,9 @@ T_EXPOSURE = 10 * 365.25 * 24 * 3600.0
 energies_mid = np.array([1.0], dtype=float)
 fluxMid = np.array([0.0], dtype=float)
 
-# ---------------------------Helpers ----------------------------------------------------
-
 def read_eff_area_csv_gen(path: str):
     """
-    Read GEN2 effective-area CSV with columns:
-      E_GeV, track_mu, track_e, track_tau, casc_e, casc_mu, casc_tau
+    Read GEN2 effective-area CSV with columns: E_GeV, track_mu, track_e, track_tau, casc_e, casc_mu, casc_tau
 
     Returns:
       E (centers),
@@ -110,10 +107,6 @@ def plot_2x2_histograms(coarse_edges: np.ndarray,
                         counts_list: List[np.ndarray],
                         labels: List[str],
                         out_png: str):
-    """Make a 2x2 grid of energy histograms sharing axes.
-    counts_list must contain exactly 4 arrays corresponding to labels.
-    """
-    assert len(counts_list) == 4 and len(labels) == 4, "Need 4 cases for a 2x2 grid"
 
     lefts = coarse_edges[:-1]
     rights = coarse_edges[1:]
@@ -187,8 +180,6 @@ def _normalize_bary(fe, fmu, ftau):
 
 
 def read_effarea_csv_radio(path: str):
-    if not os.path.exists(path):
-        raise FileNotFoundError(f'CSV "{path}" not found in current directory.')
 
     df = pd.read_csv(path, comment="#", header=None)
 
@@ -202,16 +193,11 @@ def read_effarea_csv_radio(path: str):
     return E[order], A_NC[order], A_mu[order], A_tau[order], A_e[order]
 
 
-
 def geometric_edges_from_centers(E: np.ndarray) -> np.ndarray:
-    if len(E) < 2:
-        raise ValueError("Need at least 2 energy points to build edges.")
     edges = np.zeros(len(E) + 1, dtype=float)
     edges[1:-1] = np.sqrt(E[:-1] * E[1:])
     edges[0]  = E[0]  / np.sqrt(E[1] / E[0])
     edges[-1] = E[-1] * np.sqrt(E[-1] / E[-2])
-    if not np.all(np.diff(edges) > 0):
-        raise ValueError("Computed edges are not strictly increasing.")
     return edges
 
 def make_log_bins(edges: np.ndarray, bin_width_log10: float) -> np.ndarray:
@@ -227,8 +213,7 @@ def make_log_bins(edges: np.ndarray, bin_width_log10: float) -> np.ndarray:
 def integrate_bin_I_mese(edges: np.ndarray, centers: np.ndarray, A: np.ndarray, Emin: float, Emax: float) -> float:
     total = 0.0
     for j in range(len(centers)):
-        #total_flux = np.interp(centers[j], energies_TA, phi_TA)
-        #total_flux = (centers[j]/E0)**-gamma * PHI0
+
         total_flux = np.interp(centers[j], energies_mid, fluxMid)
         a = edges[j]
         b = edges[j+1]
@@ -242,8 +227,7 @@ def integrate_bin_I(edges: np.ndarray, centers: np.ndarray, A: np.ndarray, Emin:
     total = 0.0
 
     for j in range(len(centers)): 
-        #total_flux = np.interp(centers[j], energies_TA, phi_TA)
-        #total_flux = (centers[j]/E0)**-gamma * PHI0
+
         total_flux = np.interp(centers[j], energies_Au, flux)
         a = edges[j]
         b = edges[j+1]
@@ -280,17 +264,12 @@ def save_counts_csv(coarse_edges: np.ndarray, counts: np.ndarray, path: str):
     df.to_csv(path, index=False)
 
 def read_effarea_csv(path: str):
-    if not os.path.exists(path):
-        raise FileNotFoundError(f'CSV "{path}" not found in current directory.')
-    # Try no header first
     try:
         df = pd.read_csv(path, comment="#", header=None)
         if df.shape[1] < 4:
             raise ValueError
     except Exception:
         df = pd.read_csv(path, comment="#")
-        if df.shape[1] < 4:
-            raise ValueError("CSV must have ≥4 columns: master, A_muon, A_tau, A_electron")
 
     E = np.asarray(df.iloc[:, 0], dtype=float)
     A_mu = np.asarray(df.iloc[:, 1], dtype=float)

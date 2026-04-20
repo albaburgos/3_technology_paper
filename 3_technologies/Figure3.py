@@ -1,10 +1,10 @@
-"""Figure 3: flavor sensitivity by energy decade.
+# Figure 3: flavor sensitivity by energy decade.
 
-Panels:
-1) 10^13-10^15 eV: MESE21
-2) 10^15-10^17 eV: MESE21 + ic-gen2  + Earth-skimming + Radio
-3) 10^17-10^19 eV: Earth-skimming + Radio
-"""
+# Panels:
+# 1) 10^13-10^15 eV: MESE21
+# 2) 10^15-10^17 eV: ic-gen2 + Earth-skimming + Radio
+# 3) 10^17-10^19 eV: Earth-skimming + Radio
+
 
 import os
 
@@ -91,15 +91,7 @@ def _compute_p_vebar_binned(coarse_edges: np.ndarray) -> np.ndarray:
 
 
 def _resolve_path(base_dir: str, filename: str) -> str:
-    candidates = [
-        os.path.join(base_dir, filename),
-        os.path.join(os.path.dirname(base_dir), "final", filename),
-        os.path.join(os.path.dirname(base_dir), "Final", filename),
-    ]
-    for path in candidates:
-        if os.path.exists(path):
-            return path
-    raise FileNotFoundError(f"Could not find {filename} in expected locations.")
+    return os.path.join(base_dir, filename)
 
 
 def compute_mese21_ll_decade(
@@ -380,6 +372,10 @@ def main():
     ll_mese21_15_17 = compute_mese21_ll_decade(
         flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
     )
+
+    ll_mese21_15_17 = compute_mese21_ll_decade(
+        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
+    )
     ll_icgen2_15_17 = compute_icgen2_ll_decade(
         flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
     )
@@ -390,13 +386,16 @@ def main():
     ll_radio_15_17 = compute_radio_ll_decade(
         flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, energies_mid, flux_mid, base_dir
     )
+
+
     ll_panel2 = (
         ll_mese21_15_17
-        # + ll_mesecos_scaled
-        + ll_icgen2_15_17
-        + ll_earth_15_17
-        + ll_radio_15_17
+         + ll_icgen2_15_17
+         + ll_earth_15_17
+         + ll_radio_15_17
     )
+
+    
 
     ll_earth_17_19 = compute_earthskimming_ll_decade(
         flavors, decade_17_19, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
@@ -404,22 +403,25 @@ def main():
     ll_radio_17_19 = compute_radio_ll_decade(
         flavors, decade_17_19, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
     )
-    ll_earth_plus_radio_17_19 = ll_earth_17_19 + ll_radio_17_19
+
+    ll_panel3 = (
+        ll_earth_17_19
+        + ll_radio_17_19
+    )
 
     plot_three_ternaries(
-        [ll_mese21_13_15, ll_panel2, ll_earth_plus_radio_17_19],
+        [ll_mese21_13_15, ll_panel2, ll_panel3],
         flavors=flavors,
         fe_arr=fe_arr,
         fmu_arr=fmu_arr,
         ftau_arr=ftau_arr,
         captions=(
-            "(A) $10^{13}$-$10^{15}$ eV",
-            "(B) $10^{15}$-$10^{17}$ eV",
-            "(C) $10^{17}$-$10^{19}$ eV",
+            "(A) $0.01$-$1$ PeV",
+            "(B) $1$-$100$ PeV",
+            "(C) $10^{2}$-$10^{4}$ PeV",
         ),
         savepath="MC_outputs/figure3.png",
     )
-
 
 if __name__ == "__main__":
     main()

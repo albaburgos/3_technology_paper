@@ -1,12 +1,18 @@
 
+
+## Source: Snowmass paper Figure 18 https://arxiv.org/pdf/2203.08096 at 90%CL
+## (Updated Trinity Sensitivity estimates from https://arxiv.org/pdf/2509.18236 Figure 2 at 90%CL)
+## TAMBO cross-referenced against https://arxiv.org/abs/2507.08070 Figure 3 Aperture Plot 
+
+
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from Helpers import log_interp
 
+
 OUTPUT_CSV = "effareasEarth.csv"
-PLOT_PNG   = "MC_outputs/effareasEarth.png"
 SEC_PER_YEAR = 365.25 * 24 * 3600.0
 
 # ------------------------ Helpers ------------------------
@@ -98,28 +104,13 @@ plt.grid(True, which="both", ls=":")
 plt.tight_layout()
 plt.show()
 
-# Conclude: Both TAMBO datasets are self-consistent 
-
+# Conclude: TAMBO from Snowmass paper is consistent with TAMBO paper https://arxiv.org/abs/2507.08070
 
 # ------------------------ Probability Glashow Resonance ------------------------
 
-# Compute probabilities (normalize to 1 at each E)
 p_vebar = A_tambo_e / (A_tambo_e + A_tambo_tau)
 p_vtau  = A_tambo_tau / (A_tambo_e + A_tambo_tau)
 
-print("Check normalization:", np.allclose(p_vebar + p_vtau, 1.0, rtol=1e-10))
-
-plt.figure(figsize=(7,5))
-plt.semilogx(E_tambo, p_vebar, label=r"$p(\bar{\nu}_e)$")
-plt.semilogx(E_tambo, p_vtau,  label=r"$p(\nu_\tau)$")
-
-plt.xlabel("Energy [GeV]")
-plt.ylabel("Channel probability")
-plt.legend()
-plt.grid(True, which="both", ls=":")
-plt.ylim(0, 1)
-plt.tight_layout()
-plt.show()
 
 # ------------------------------Other Earth-Skimming Experiments ---------------------------------
 
@@ -147,6 +138,16 @@ E_grand, A_grand = effective_area_from_sensitivity(
 
 E_grand_interp = np.logspace(np.log10(E_grand[0]), np.log10(E_grand[-1]), 100)
 A_grand_interp = log_interp(E_grand_interp, E_grand, A_grand)
+
+### AUGER
+E_auger   = np.array([1e17,1e18,1e19,1e20])
+E2Phi_auger = np.array([7e-8,2e-8,7e-8,4e-7])
+
+E_auger, A_auger = effective_area_from_sensitivity(
+    E_auger, E2Phi_auger)
+
+E_auger_interp = np.logspace(np.log10(E_auger[0]), np.log10(E_auger[-1]), 100)
+A_auger_interp = log_interp(E_auger_interp, E_auger, A_auger)
 
 ### POEMMA - results were quoted for 5 years only !
 E_poemma   = np.array([1.5e16,2e16, 3e16,1e17,5e17,3e18,3e19, 1e20])
@@ -178,29 +179,16 @@ plt.grid(True, which="both", ls=":")
 plt.tight_layout()
 plt.show()
 
-# ------------------------ Common energy grid -------------------------------------
+# ------------------------  energy grid -------------------------------------
 emin =  min(E_tambo)
 emax = max(E_grand_interp)
 master = np.logspace(np.log10(emin), np.log10(emax), 300)
 
 ## For All Earth-skimming 
 A_mu_master = np.zeros(len(master))
-A_tau_master = log_interp(master, E_trinity_interp, A_trinity_interp) + log_interp(master, E_poemma_interp, A_poemma_interp) + log_interp(master, E_tambo,  A_tambo_tau)  + log_interp(master, E_grand_interp, A_grand_interp) 
+A_tau_master = log_interp(master, E_trinity_interp, A_trinity_interp) + log_interp(master, E_poemma_interp, A_poemma_interp) + log_interp(master, E_tambo,  A_tambo_tau)  + log_interp(master, E_grand_interp, A_grand_interp) + log_interp(master, E_auger_interp, A_auger_interp)
 A_e_master =  log_interp(master, E_tambo,  A_tambo_e)  + log_interp(master, E_trinity_interp,  A_trinity_e)  
 
-# ------------------------ Plot ------------------------
-plt.figure(figsize=(9,6), dpi=140)
-plt.loglog(master, A_mu_master,  label="Muon")
-plt.loglog(master, A_tau_master, label="Tau")
-plt.loglog(master, A_e_master,   label="Electron")
-plt.xlabel("Energy E (GeV)")
-plt.ylabel(r"Effective Area $A_{\rm eff}$ (cm$^2$)")
-plt.title("Effective Area All-Experiment (10-year integration) ")
-plt.grid(True, which="both", alpha=0.3)
-plt.legend(loc="lower right", fontsize=9, ncol=2)
-plt.tight_layout()
-plt.savefig(PLOT_PNG)
-print(f"Saved plot: {PLOT_PNG}")
 
 # ------------------------ Save CSV ------------------------
 os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)

@@ -209,6 +209,7 @@ def main():
             "(3) Radio & Radar High Flux\n$10^{2}$–$10^{4}$ PeV",
         ),
         savepath="MC_outputs/figure2.png",
+        textbox_text="high flux",
     )
 
 

@@ -17,6 +17,7 @@ def plot_three_ternaries_95pairs(
     captions=("In-ice Radio", "Earth-Skimming", "All Technologies Combined"),
     savepath="MC_outputs/triangles_3panel.png",
     interval=0.1,
+    textbox_text=None,
 ):
 
     plt.rcParams.update({
@@ -252,6 +253,14 @@ def plot_three_ternaries_95pairs(
             clip_on=False,
         )
 
+    if textbox_text is not None:
+        fig.text(
+            0.975, 0.87, str(textbox_text),
+            ha="right", va="bottom",
+            fontsize=18,
+            bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="black", alpha=0.95),
+        )
+
     wspace = 0.16
     top = 0.86
     bottom = 0.18
@@ -270,6 +279,7 @@ def plot_three_ternaries(
     interval=0.1,
     captions=None,
     panel_captions=None,
+    textbox_text=None,
 ):
     import os, numpy as np
     import matplotlib.pyplot as plt
@@ -399,9 +409,9 @@ def plot_three_ternaries(
         axs = [axs] 
 
     levels_inc = np.sort([np.log(1.0 - 0.95), np.log(1.0 - 0.68)]) 
-    #color_scheme = {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35}
+    color_scheme = {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35}
     #color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
-    color_scheme= {"c68": "#228b22", "a68": 0.25, "c95": "#90ee90", "a95": 0.35} #green
+    # color_scheme= {"c68": "#228b22", "a68": 0.25, "c95": "#90ee90", "a95": 0.35} #green
 
     handles_top = [
         Patch(facecolor=color_scheme["c68"], edgecolor='none', alpha=color_scheme["a68"], label='68% CL'),
@@ -464,6 +474,14 @@ def plot_three_ternaries(
         frameon=True, fancybox=True, framealpha=0.98,
         edgecolor="black", facecolor="white",
     )
+
+    if textbox_text is not None:
+        fig.text(
+            0.975, 0.87, str(textbox_text),
+            ha="right", va="bottom",
+            fontsize=18,
+            bbox=dict(boxstyle="round,pad=0.35", fc="white", ec="black", alpha=0.95),
+        )
 
     wspace = 0.16 if n_panels > 1 else 0.02
     top = 0.84

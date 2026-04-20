@@ -117,61 +117,6 @@ def events_per_coarse_bin_single(E: np.ndarray, edges: np.ndarray,
     return np.asarray(counts)
 
 
-def obs_events_gen2all(
-    E: np.ndarray,
-    edges: np.ndarray,
-    A_e: np.ndarray,
-    A_mu: np.ndarray,
-    A_tau: np.ndarray,
-    coarse_edges: np.ndarray,
-    fe0: float,
-    fmu0: float,
-    ftau0: float,
-):
-    """
-    Asimov observations for IC-Gen2 all-flavor effective areas with
-    perfect flavor tagging (separate e/mu/tau Poisson channels).
-    """
-    nobs_e = []
-    nobs_mu = []
-    nobs_tau = []
-    for i in range(len(coarse_edges) - 1):
-        Emin = float(coarse_edges[i])
-        Emax = float(coarse_edges[i + 1])
-        Ie = integrate_bin_I_mese(edges, E, A_e, Emin, Emax)
-        Imu = integrate_bin_I_mese(edges, E, A_mu, Emin, Emax)
-        Itau = integrate_bin_I_mese(edges, E, A_tau, Emin, Emax)
-        nobs_e.append(Ie * fe0)
-        nobs_mu.append(Imu * fmu0)
-        nobs_tau.append(Itau * ftau0)
-    return np.asarray(nobs_e), np.asarray(nobs_mu), np.asarray(nobs_tau)
-
-
-def _expected_components_per_bin_gen2all_perflavor(
-    E: np.ndarray,
-    edges: np.ndarray,
-    A_e: np.ndarray,
-    A_mu: np.ndarray,
-    A_tau: np.ndarray,
-    coarse_edges: np.ndarray,
-    fe: float,
-    fmu: float,
-    ftau: float,
-):
-    nexp_e = []
-    nexp_mu = []
-    nexp_tau = []
-    for i in range(len(coarse_edges) - 1):
-        Emin = float(coarse_edges[i])
-        Emax = float(coarse_edges[i + 1])
-        Ie = integrate_bin_I_mese(edges, E, A_e, Emin, Emax)
-        Imu = integrate_bin_I_mese(edges, E, A_mu, Emin, Emax)
-        Itau = integrate_bin_I_mese(edges, E, A_tau, Emin, Emax)
-        nexp_e.append(Ie * fe)
-        nexp_mu.append(Imu * fmu)
-        nexp_tau.append(Itau * ftau)
-    return np.asarray(nexp_e), np.asarray(nexp_mu), np.asarray(nexp_tau)
-
 # ---------------------------Likelihood Calculations ---------------------------------------
 
 def loglike_totals_poisson(Nobs_total, Nexp_total):
@@ -186,31 +131,6 @@ def poisson_loglike(k, lam):
     k = np.asarray(k, dtype=float)
     return np.sum(k * np.log(lam) - lam - gammaln(k + 1.0))
 
-
-def loglike_combined_gen2all_perflavor(
-    E: np.ndarray,
-    edges: np.ndarray,
-    A_e: np.ndarray,
-    A_mu: np.ndarray,
-    A_tau: np.ndarray,
-    coarse_edges: np.ndarray,
-    fe: float,
-    fmu: float,
-    ftau: float,
-    Nobs_e,
-    Nobs_mu,
-    Nobs_tau,
-):
-    """
-    Per-flavor Poisson likelihood for IC-Gen2 all-flavor effective areas, assuming perfect flavor sensitivity.
-    """
-    Nexp_e, Nexp_mu, Nexp_tau = _expected_components_per_bin_gen2all_perflavor(
-        E, edges, A_e, A_mu, A_tau, coarse_edges, fe, fmu, ftau
-    )
-    ll = loglike_totals_poisson(Nobs_e, Nexp_e)
-    ll += loglike_totals_poisson(Nobs_mu, Nexp_mu)
-    ll += loglike_totals_poisson(Nobs_tau, Nexp_tau)
-    return float(ll)
 
 def loglike_channel_mult(Nobs_total, Nobs_mult, Nexp_total,
                          Nexp_CC_mu, Nexp_CC_tau, rmu_vec, rtau_vec):

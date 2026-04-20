@@ -1,4 +1,4 @@
-## Effective Areas Icecubegen2 radio + RNO-G + ARIANNA + ARA + RET-N (all-flavor sensitivity)
+## Figure 9: Effective Areas Icecubegen2 radio + RNO-G + ARIANNA + ARA + RET-N (they have all-flavor sensitivity)
 
 import os
 import numpy as np
@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 
 DeltaOmega = 4*np.pi 
 GEV_PER_PEV = 1e6
-PLOT_LINEWIDTH = 2.5
+PLOT_LINEWIDTH = 3.0
 
 OUTPUT_CSV = "Final/effareas8.csv"
-PLOT_PNG   = "MC_outputs/combined_plot.png"
+PLOT_PNG   = "MC_outputs/figure9.png"
 SEC_PER_YEAR = 365.25 * 24 * 3600.0
 
 
@@ -121,7 +121,7 @@ def effective_area_from_sensitivity(E_pts, E2Phi_pts):
 
 # ------------------------ Compute component A_eff ICgen 2 -------------------
 
-# Interpolate readings for V_NC, V_e_ V_mu,V_tau
+# Interpolate
 
 sigma_NC = sigmaNC(E)
 sigma_CC = sigmaCC(E)
@@ -183,26 +183,14 @@ A_rnogo_tau = A_all_interp * f_tau
 # ------------------------ Plot ------------------------
 E_interp_pev = E_interp / GEV_PER_PEV
 plt.figure(figsize=(9,6), dpi=140)
-plt.loglog(E_interp_pev, A_mu_interp, linewidth=PLOT_LINEWIDTH, label="Muon CC")
-plt.loglog(E_interp_pev, A_tau_interp, linewidth=PLOT_LINEWIDTH, label="Tau CC")
-plt.loglog(E_interp_pev, A_e_interp, linewidth=PLOT_LINEWIDTH, label="Electron CC")
-plt.loglog(E_interp_pev, A_NC_interp, linewidth=PLOT_LINEWIDTH, label="NC")
-plt.xlabel("Energy (PeV)")
-plt.ylabel(r"IceCube-Gen2 Radio $A_{\rm eff}$ (cm$^2$)")
+plt.loglog(E_interp_pev, A_mu_interp, linewidth=PLOT_LINEWIDTH, label=r"$\nu_\mu$ CC")
+plt.loglog(E_interp_pev, A_tau_interp, linewidth=PLOT_LINEWIDTH, label=r"$\nu_\tau$ CC")
+plt.loglog(E_interp_pev, A_e_interp, linewidth=PLOT_LINEWIDTH, label=r"$\nu_e$ CC")
+plt.loglog(E_interp_pev, A_NC_interp, ls="--", linewidth=PLOT_LINEWIDTH, label="NC")
+plt.xlabel("Energy [PeV]")
+plt.ylabel(r"IceCube-Gen2 Radio $A_{\rm eff}$ [cm$^2$]")
 plt.grid(True, which="both", alpha=0.3)
 plt.legend(loc="lower right", ncol=2)
 plt.tight_layout()
 plt.savefig(PLOT_PNG)
 print(f"Saved plot: {PLOT_PNG}")
-
-# ------------------------ Save CSV ------------------------
-os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
-df = pd.DataFrame({
-    "E_GeV": E_interp,
-    "A_NC_m2": A_NC_interp+A_rnogo_NC,
-    "A_mu_m2": A_mu_interp+A_rnogo_tau,
-    "A_tau_m2": A_tau_interp+A_rnogo_mu,
-    "A_e_m2": A_e_interp+A_rnogo_e ,
-})
-df.to_csv(OUTPUT_CSV, index=False)
-print(f"Saved CSV:  {OUTPUT_CSV}")

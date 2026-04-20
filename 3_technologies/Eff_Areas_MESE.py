@@ -105,8 +105,8 @@ E3tau, A3tau = effective_area_from_Nev(E3, E3_Tau, T_years, DeltaOmega)
 
 ###------------------------ IC-gen2 from reference ------------------------
 
-# Flavor sensitivity for cascades
-# Use interpolation for track flavor sensitivity based on IC-gen1
+# Flavor sensitivity IC-gen2 available for cascades
+# Use interpolation for track flavor sensitivity based on IC-MESE
 
 E_gen2_gev = np.array([1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10])
 b1 = np.array([1e-1, 2e1, 1e2, 3e2, 7e1, 4e0, 2e-1, 1e-2]) * 0.927/(4*np.pi) * 1e4

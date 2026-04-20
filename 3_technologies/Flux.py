@@ -1,5 +1,6 @@
 import numpy as np
 
+
 E0 = 1e5
 
 def flux(energy_gev: np.ndarray, phi0_per_flavor: float = 2.06e-18, gamma: float = 2.46, e0: float = E0):
