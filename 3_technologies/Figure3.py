@@ -28,6 +28,7 @@ from Helpers import (
     log_interp,
     logx_interp,
     read_eff_area_csv_gen,
+    read_eff_area_csv_toise,
     read_effarea_csv,
     read_effarea_csv_radio,
     read_effarea_csv_stacked,
@@ -143,7 +144,8 @@ def compute_mese21_ll_decade(
     return ll_grid
 
 
-def compute_icgen2_ll_decade(
+
+def compute_icgen2_toise_ll_decade_perfect(
     flavors,
     coarse_edges,
     fe0,
@@ -151,67 +153,33 @@ def compute_icgen2_ll_decade(
     ftau0,
     base_dir,
 ):
-    gen2_path = _resolve_path(base_dir, "effareasgen2.csv")
-    E_gen2, track_triplet, casc_triplet = read_eff_area_csv_gen(gen2_path)
+    """
+    Perfect flavor resolution
+    """
+    toise_path = _resolve_path(base_dir, "effareasgen2_toise_allflavor.csv")
+    E_gen2, A_e, A_mu, A_tau = read_eff_area_csv_toise(toise_path)
     edges_gen2 = geometric_edges_from_centers(E_gen2)
 
-    a_mu_t, a_tau_t, a_e_t = track_triplet
-    a_mu_c, a_tau_c, a_e_c = casc_triplet
+    # Pure-flavor integrals: events_per_coarse_bin_single with unit fraction
+    I_e   = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 1.0, 0.0, 0.0)
+    I_mu  = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 0.0, 1.0, 0.0)
+    I_tau = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 0.0, 0.0, 1.0)
 
-    k_asimov_track = events_per_coarse_bin_single(
-        E_gen2,
-        edges_gen2,
-        a_e_t,
-        a_mu_t,
-        a_tau_t,
-        coarse_edges,
-        fe0,
-        fmu0,
-        ftau0,
-        norm=1.0,
-    )
-    k_asimov_casc = events_per_coarse_bin_single(
-        E_gen2,
-        edges_gen2,
-        a_e_c,
-        a_mu_c,
-        a_tau_c,
-        coarse_edges,
-        fe0,
-        fmu0,
-        ftau0,
-        norm=1.0,
-    )
+    k_e   = I_e   * fe0
+    k_mu  = I_mu  * fmu0
+    k_tau = I_tau * ftau0
+
+    total_asimov = np.sum(k_e) + np.sum(k_mu) + np.sum(k_tau)
+    print(f"[TOISE perfect] Asimov total: {total_asimov:.1f}  "
+          f"(e={np.sum(k_e):.1f}, mu={np.sum(k_mu):.1f}, tau={np.sum(k_tau):.1f})")
 
     ll_grid = np.full(len(flavors), -np.inf, dtype=float)
-    for j, (fe, fmu, ftau) in enumerate(flavors):
-        lam_t = events_per_coarse_bin_single(
-            E_gen2,
-            edges_gen2,
-            a_e_t,
-            a_mu_t,
-            a_tau_t,
-            coarse_edges,
-            fe,
-            fmu,
-            ftau,
-            norm=1.0,
-        )
-        lam_c = events_per_coarse_bin_single(
-            E_gen2,
-            edges_gen2,
-            a_e_c,
-            a_mu_c,
-            a_tau_c,
-            coarse_edges,
-            fe,
-            fmu,
-            ftau,
-            norm=1.0,
-        )
+    for j, (fe, fmu, _) in enumerate(flavors):
+        lam_e  = I_e  * fe
+        lam_mu = I_mu * fmu
         ll_grid[j] = (
-            loglike_totals_poisson(np.asarray(k_asimov_track, dtype=float), np.asarray(lam_t, dtype=float))
-            + loglike_totals_poisson(np.asarray(k_asimov_casc, dtype=float), np.asarray(lam_c, dtype=float))
+            loglike_totals_poisson(k_e,  lam_e)
+            + loglike_totals_poisson(k_mu, lam_mu)
         )
     return ll_grid
 
@@ -345,7 +313,7 @@ def compute_radio_ll_decade(
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    energies_mid, flux_mid = build_flux_hypothesis("mid")
+    energies_mid, flux_mid = build_flux_hypothesis("high")
     helpers.energies_mid = energies_mid
     helpers.fluxMid = flux_mid
     helpers.OMEGA = OMEGA
@@ -355,6 +323,7 @@ def main():
 
     fe0, fmu0, ftau0 = 0.30, 0.36, 0.34
     fe0_p2, fmu0_p2, ftau0_p2 = 0.17, 0.45, 0.37
+    # 0.20, 0.408, 0.384
 
     flavors = generate_flavor_grid(step=GRID_STEP)
     fe_arr = np.array([f[0] for f in flavors], dtype=float)
@@ -365,21 +334,12 @@ def main():
     decade_15_17 = np.logspace(6, 8, int((8 - 6) / BIN_WIDTH_LOG10) + 1, base=10.0)
     decade_17_19 = np.logspace(8, 10, int((10 - 8) / BIN_WIDTH_LOG10) + 1, base=10.0)
 
-    ll_mese21_13_15 = compute_mese21_ll_decade(
+
+    ll_gen2_toise_13_15 = compute_icgen2_toise_ll_decade_perfect(
         flavors, decade_13_15, fe0, fmu0, ftau0, base_dir
     )
 
-    ll_mese21_15_17 = compute_mese21_ll_decade(
-        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
-    )
 
-    ll_mese21_15_17 = compute_mese21_ll_decade(
-        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
-    )
-    ll_icgen2_15_17 = compute_icgen2_ll_decade(
-        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
-    )
-  
     ll_earth_15_17 = compute_earthskimming_ll_decade(
         flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, energies_mid, flux_mid, base_dir
     )
@@ -387,12 +347,15 @@ def main():
         flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, energies_mid, flux_mid, base_dir
     )
 
+    ll_gen2_toise_15_17 = compute_icgen2_toise_ll_decade_perfect(
+        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
+    )
 
     ll_panel2 = (
-        ll_mese21_15_17
-         + ll_icgen2_15_17
-         + ll_earth_15_17
-         + ll_radio_15_17
+        ll_gen2_toise_15_17
+        + ll_earth_15_17
+        + ll_radio_
+        15_17
     )
 
     
@@ -410,7 +373,7 @@ def main():
     )
 
     plot_three_ternaries(
-        [ll_mese21_13_15, ll_panel2, ll_panel3],
+        [ll_gen2_toise_13_15, ll_panel2, ll_panel3],
         flavors=flavors,
         fe_arr=fe_arr,
         fmu_arr=fmu_arr,
@@ -420,7 +383,7 @@ def main():
             "(B) $1$-$100$ PeV",
             "(C) $10^{2}$-$10^{4}$ PeV",
         ),
-        savepath="MC_outputs/figure3.png",
+        savepath=os.path.join(os.path.dirname(base_dir), "MC_outputs", "figure3.png"),
     )
 
 if __name__ == "__main__":

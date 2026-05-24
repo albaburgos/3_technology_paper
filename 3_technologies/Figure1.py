@@ -30,7 +30,7 @@ GRID_STEP = 1 / 40
 
 E0 = 1e5
 
-# Radio classifier performance curves (energies are in GeV after conversion).
+# Radio classifier performance curves (GeV).
 EMT_GEV = np.array([1e17, 2e17, 3e17, 4e17, 5e17, 6e17, 9e17, 2e18, 4e18, 6e18, 9e18], dtype=float) * 1e-9
 MU_EFF = np.array([0.03, 0.05, 0.07, 0.09, 0.11, 0.13, 0.17, 0.28, 0.37, 0.42, 0.46], dtype=float)
 TAU_EFF = np.array([0.035, 0.03, 0.03, 0.035, 0.04, 0.04, 0.05, 0.09, 0.14, 0.18, 0.23], dtype=float)
@@ -163,8 +163,7 @@ def main():
         ftau_arr=ftau_arr,
         captions=("(1) In-Ice Radio & Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
         ),
-        savepath="MC_outputs/figure8.png",
-        textbox_text="high flux"
+        savepath="MC_outputs/figure1.png",
     )
 
 

@@ -13,8 +13,7 @@ fluxMid = np.array([0.0], dtype=float)
 
 def read_eff_area_csv_gen(path: str):
     """
-    Read GEN2 effective-area CSV with columns: E_GeV, track_mu, track_e, track_tau, casc_e, casc_mu, casc_tau
-
+    use for effareasgen.csv (old version)
     Returns:
       E (centers),
       track_triplet = (A_mu, A_tau, A_e),
@@ -48,6 +47,7 @@ def read_eff_area_csv_gen(path: str):
 
 def read_effarea_csv_stacked(path: str):
     """
+    use for effareas MESE21 MESE 11
     CSV columns (10 total):
       0: E,
       1-3:  A_mu_1, A_tau_1, A_e_1,
@@ -278,6 +278,30 @@ def read_effarea_csv(path: str):
 
     order = np.argsort(E)
     return E[order], A_mu[order], A_tau[order], A_e[order]
+
+def read_eff_area_csv_toise(path: str):
+    """
+    Read TOISE GEN2 total effective-area CSV.
+    Columns: E_GeV, A_e, A_mu, A_tau  (total over all event types, ν+ν̄ averaged).
+
+    Returns:
+      E     — energy bin upper edges (GeV)
+      A_e   — νe effective area (m²)
+      A_mu  — νμ effective area (m²)
+      A_tau — ντ effective area (m²)
+    """
+    df = pd.read_csv(path)
+    required = ["E_GeV", "A_e", "A_mu", "A_tau"]
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing columns in {path}: {missing}")
+    E     = df["E_GeV"].to_numpy(dtype=float) 
+    A_e   = df["A_e"].to_numpy(dtype=float)* 1e4
+    A_mu  = df["A_mu"].to_numpy(dtype=float)* 1e4
+    A_tau = df["A_tau"].to_numpy(dtype=float)* 1e4
+    order = np.argsort(E)
+    return E[order], A_e[order], A_mu[order], A_tau[order]
+
 
 def _clip01(p):
     return np.clip(p, 1e-12, 1.0 - 1e-12)

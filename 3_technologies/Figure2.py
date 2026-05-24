@@ -2,7 +2,6 @@
 ### (1) Low Flux (2) Intermediate Flux (3) High Flux
 
 import os
-
 import numpy as np
 
 import EventGeneration as eventgen
@@ -52,7 +51,7 @@ def _geometric_mid_flux(e_target, e_ta, f_ta, e_au, f_au):
 
 
 def build_flux_triplet():
-    # Optimistic (TA)
+    # High-Flux scenario (TA)
     e2phi_ta = np.array(
         [3 * 3e-8, 3 * 1.5e-8, 18e-9, 15e-9, 1e-8, 9e-9, 8e-9, 6e-9, 5e-9, 4.5e-9, 7e-9, 9e-9, 1e-8, 8e-9, 5e-9, 2e-9, 9e-10, 3e-10],
         dtype=float,
@@ -63,7 +62,7 @@ def build_flux_triplet():
     ) * 1e-9
     phi_ta = e2phi_ta / (energies_ta ** 2)
 
-    # Pessimistic (Au)
+    # Low-flux scenario (Au)
     e2phi_au = np.array(
         [3 * 3e-8, 3 * 1.5e-8, 18e-9, 15e-9, 1e-8, 9e-9, 8e-9, 6e-9, 5e-9, 4e-9, 3.5e-9, 3.4e-9, 3e-9, 2.3e-9, 1.6e-9, 1.1e-9, 9e-10, 5e-10, 4e-10],
         dtype=float,

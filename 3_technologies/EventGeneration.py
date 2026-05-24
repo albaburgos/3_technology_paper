@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import gammaln, logsumexp
 from scipy.stats import binom
 
-from Helpers import _clip01, integrate_bin_I, integrate_bin_I_mese
+from Helpers import _clip01, integrate_bin_I
 
 energies_mid = np.array([1.0], dtype=float)
 fluxMid = np.array([0.0], dtype=float)
@@ -64,19 +64,6 @@ def _expected_components_per_bin_tau(E, edges, A_e, A_mu, A_tau,
 
     return np.asarray(N_all), np.asarray(Ne), np.asarray(Nmu), np.asarray(Ntau)
 
-def _expected_components_per_bin_gen2(E, edges, A_e, A_mu, A_tau,
-                                 coarse_edges, fe, fmu, ftau):
-
-    N_all = []
-    for i in range(len(coarse_edges)-1):
-        Emin = float(coarse_edges[i]); Emax = float(coarse_edges[i+1])
-        Ie   = integrate_bin_I(edges, E, A_e,  Emin, Emax)
-        Itau = integrate_bin_I(edges, E, A_tau, Emin, Emax)
-        Imu = integrate_bin_I(edges, E, A_mu, Emin, Emax)
-
-        N_all.append(Ie*fe +Itau*ftau+Imu*fmu)
-
-    return np.asarray(N_all)
 
 def _expected_components_per_bin(E, edges, A_NC, A_e, A_mu, A_tau,
                                  coarse_edges, fe, fmu, ftau, fe0, fmu0, ftau0, energies,flux):
@@ -105,15 +92,20 @@ def _expected_components_per_bin(E, edges, A_NC, A_e, A_mu, A_tau,
 def events_per_coarse_bin_single(E: np.ndarray, edges: np.ndarray,
                                  A_e: np.ndarray, A_mu: np.ndarray, A_tau: np.ndarray,
                                  coarse_edges: np.ndarray,
-                                 fe: float, fmu: float, ftau: float, norm: float = 1.0):
+                                 fe: float, fmu: float, ftau: float, norm: float = 1.0,
+                                 energies=None, flux=None):
+    if energies is None:
+        energies = energies_mid
+    if flux is None:
+        flux = fluxMid
     counts = []
     for i in range(len(coarse_edges) - 1):
         Emin = float(coarse_edges[i])
         Emax = float(coarse_edges[i + 1])
-        Ie   = integrate_bin_I_mese(edges, E, A_e,  Emin, Emax)
-        Imu  = integrate_bin_I_mese(edges, E, A_mu, Emin, Emax)
-        Itau = integrate_bin_I_mese(edges, E, A_tau, Emin, Emax)
-        counts.append( (Ie*fe + Imu*fmu + Itau*ftau))
+        Ie   = integrate_bin_I(edges, E, A_e,   Emin, Emax, energies, flux)
+        Imu  = integrate_bin_I(edges, E, A_mu,  Emin, Emax, energies, flux)
+        Itau = integrate_bin_I(edges, E, A_tau, Emin, Emax, energies, flux)
+        counts.append(Ie*fe + Imu*fmu + Itau*ftau)
     return np.asarray(counts)
 
 
