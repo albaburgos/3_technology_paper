@@ -82,9 +82,14 @@ def _compute_ll_panels_from_figure3(base_dir):
         flavors, decade_17_19, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
     )
 
+    ll_gen2_toise_17_19 = fig3.compute_icgen2_toise_ll_decade_perfect(
+        flavors, decade_17_19, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
+    )
+
     ll_panel3 = (
         ll_earth_17_19
         + ll_radio_17_19
+        + ll_gen2_toise_17_19
     )
 
     return flavors, [ll_panel1, ll_panel2, ll_panel3]

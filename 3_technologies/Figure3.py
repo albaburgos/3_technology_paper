@@ -367,9 +367,14 @@ def main():
         flavors, decade_17_19, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
     )
 
+    ll_gen2_toise_17_19 = compute_icgen2_toise_ll_decade_perfect(
+        flavors, decade_17_19, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
+    )
+
     ll_panel3 = (
         ll_earth_17_19
         + ll_radio_17_19
+        + ll_gen2_toise_17_19
     )
 
     plot_three_ternaries(

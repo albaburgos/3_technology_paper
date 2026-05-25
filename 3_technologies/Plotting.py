@@ -410,7 +410,7 @@ def plot_three_ternaries(
 
     levels_inc = np.sort([np.log(1.0 - 0.95), np.log(1.0 - 0.68)]) 
     color_scheme = {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35}
-    #color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
+    # color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
     # color_scheme= {"c68": "#228b22", "a68": 0.25, "c95": "#90ee90", "a95": 0.35} #green
 
     handles_top = [

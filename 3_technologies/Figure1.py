@@ -7,6 +7,7 @@ import numpy as np
 import EventGeneration as eventgen
 import Helpers as helpers
 from Flux import build_flux_hypothesis
+import Figure3 as fig3
 from EventGeneration import (
     loglike_combined,
     loglike_combined_tau,
@@ -108,7 +109,7 @@ def compute_tau_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_m
     nz = cnt_per_bin > 0
     p_vebar_binned[nz] = sum_per_bin[nz] / cnt_per_bin[nz]
 
-    eff9_path = os.path.join(base_dir, "effareasEarth.csv")
+    eff9_path = os.path.join(base_dir, "effareas9.csv")
     Et, A_mut, A_taut, A_et = read_effarea_csv(eff9_path)
     edgest = geometric_edges_from_centers(Et)
 
@@ -137,7 +138,7 @@ def main():
     coarse_edges = np.logspace(8, 10, int((10 - 8) / BIN_WIDTH_LOG10) + 1, base=10)
     fe0, fmu0, ftau0 = 0.30, 0.36, 0.34
 
-    energies_mid, flux_mid = build_flux_hypothesis("high")
+    energies_mid, flux_mid = build_flux_hypothesis("mid")
 
     helpers.energies_mid = energies_mid
     helpers.fluxMid = flux_mid
@@ -153,7 +154,14 @@ def main():
     ll_tau = compute_tau_ll(
         flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
     )
-    ll_combined = ll_radio + ll_tau
+
+    ll_gen2_toise_17_19 = fig3.compute_icgen2_toise_ll_decade_perfect(
+        flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
+    )
+
+    ll_combined = ll_radio + ll_tau + ll_gen2_toise_17_19
+
+
 
     plot_three_ternaries(
         [ll_radio, ll_tau, ll_combined],
