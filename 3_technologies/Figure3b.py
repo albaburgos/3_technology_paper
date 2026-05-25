@@ -1,13 +1,6 @@
-# Figure 3b: Posterior distributions over source muon fraction
+# Figure 3b: Confidence levels on source muon fraction via Wilks' theorem.
 # Maps source fmu → earth fractions via PMNS averaged oscillation,
-# then computes Bayesian posterior from the ll grid.
-
-# POINTS = {
-#     "0:1:0 at source": (0.17, 0.45, 0.37),
-#     "1:2:0 at source": (0.30, 0.36, 0.34),
-#     "1:0:0 at source": (0.55, 0.17, 0.28),
-# }
-
+# evaluates the profile likelihood ratio along the oscillation curve.
 
 import os
 
@@ -22,7 +15,7 @@ import PMNS_matrix as P
 from Flux import build_flux_hypothesis
 from Helpers import generate_flavor_grid
 
-T_EXPOSURE = 10 * 365.25 * 24 * 3600.0
+T_EXPOSURE = 15 * 365.25 * 24 * 3600.0
 OMEGA = 4 * np.pi
 
 def _apply_plotting_text_style():
@@ -38,7 +31,6 @@ def _apply_plotting_text_style():
         }
     )
 
-
 def _compute_ll_panels_from_figure3(base_dir):
     """Recompute Figure 3 panel likelihoods"""
     energies_mid, flux_mid = build_flux_hypothesis("high")
@@ -49,11 +41,9 @@ def _compute_ll_panels_from_figure3(base_dir):
     eventgen.energies_mid = energies_mid
     eventgen.fluxMid = flux_mid
 
-    # Derive injection points from PMNS so the Asimov point lies exactly on the
-    # oscillation curve; oscillate_to_earth(fmu_s) = (fe_earth, fmu_earth)
-    fe0,    fmu0    = oscillate_to_earth(2.0 / 3.0)  # 1:2:0 at source
+    fe0,    fmu0    = oscillate_to_earth(2.0 / 3.0)  
     ftau0   = 1.0 - fe0 - fmu0
-    fe0_p2, fmu0_p2 = oscillate_to_earth(1.0)         # 0:1:0 at source
+    fe0_p2, fmu0_p2 = oscillate_to_earth(1.0)    
     ftau0_p2 = 1.0 - fe0_p2 - fmu0_p2
 
     flavors = generate_flavor_grid(step=fig3.GRID_STEP)
@@ -63,7 +53,7 @@ def _compute_ll_panels_from_figure3(base_dir):
     decade_17_19 = np.logspace(8, 10, int((10 - 8) / fig3.BIN_WIDTH_LOG10) + 1, base=10.0)
 
     ll_panel1 = fig3.compute_icgen2_toise_ll_decade_perfect(
-        flavors, decade_13_15, fe0, fmu0, ftau0, base_dir
+        flavors, decade_13_15, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
     )
 
     ll_earth_15_17 = fig3.compute_earthskimming_ll_decade(
@@ -74,7 +64,7 @@ def _compute_ll_panels_from_figure3(base_dir):
     )
 
     ll_gen2_toise_15_17 = fig3.compute_icgen2_toise_ll_decade_perfect(
-        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
+        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, energies_mid, flux_mid, base_dir
     )
 
     ll_panel2 = (
@@ -115,73 +105,59 @@ def oscillate_to_earth(fmu_source):
     return fe_earth, fmu_earth
 
 
-def return_posterior(ll_grid, flavors, fs):
-    """Posterior over source fmu with flat prior (uniform, cancels in normalisation).
 
-    Args:
-        ll_grid: 1-D array of log-likelihoods over the flavors grid (earth fractions).
-        flavors: list of (fe, fmu, ftau) tuples matching ll_grid.
-        fs:      1-D array of source fmu values to evaluate.
+def _profile_on_curve(ll_grid, flavors, fs):
+    """Evaluate profile likelihood ratio along the PMNS oscillation curve.
 
-    Returns:
-        Normalised posterior array over fs.
+    Returns z = ell - ell_max (≤ 0) and profile = exp(z)
     """
     fs = np.asarray(fs, dtype=float)
-    fe_earth, fmu_earth = oscillate_to_earth(fs)
-
     flavors_arr = np.array(flavors, dtype=float)
     ll_arr = np.asarray(ll_grid, dtype=float)
 
-    # Interpolate in 2D (fe, fmu) — ftau is redundant on the simplex
-    interp = LinearNDInterpolator(flavors_arr[:, :2], ll_arr)
-    query2d = np.stack([fe_earth, fmu_earth], axis=-1)  # (M, 2)
-    log_lik = interp(query2d)
+    fe_earth, fmu_earth = oscillate_to_earth(fs)
+    query2d = np.stack([fe_earth, fmu_earth], axis=-1)
 
+    interp = LinearNDInterpolator(flavors_arr[:, :2], ll_arr)
+    log_lik = interp(query2d)
 
     nan_mask = ~np.isfinite(log_lik)
     if nan_mask.any():
-        dist = np.sum((flavors_arr[:, :2][None, :, :] - query2d[nan_mask, None, :]) ** 2, axis=-1)
+        dist = np.sum(
+            (flavors_arr[:, :2][None, :, :] - query2d[nan_mask, None, :]) ** 2, axis=-1
+        )
         log_lik[nan_mask] = ll_arr[np.argmin(dist, axis=-1)]
 
-    log_lik = log_lik - np.nanmax(log_lik)
-    posterior = np.exp(log_lik)
-    norm = np.trapz(posterior, fs)
-    if norm > 0:
-        posterior /= norm
-    return posterior
+    z = log_lik - np.nanmax(log_lik)
+    return z, np.exp(z)
 
 
 def plot_muon_fraction_panels(flavors, ll_panels, savepath):
     _apply_plotting_text_style()
 
+    # Wilks thresholds for 1 DOF
+    Z_68 = -0.5 * 1.000  # 68% CL
+    Z_95 = -0.5 * 3.84  # 95% CL
+
     fig, axes = plt.subplots(1, 3, figsize=(18, 5.6), constrained_layout=False)
     fs = np.linspace(0.0, 1.0, 500)
 
     for i, (ax, ll) in enumerate(zip(axes, ll_panels)):
-
-        posterior = return_posterior(ll, flavors,fs)
-
-        # Credible intervals
-        sorted_p = np.sort(posterior)[::-1]
-        cum = np.cumsum(sorted_p) * (fs[1] - fs[0])
-        thresh95 = sorted_p[min(np.searchsorted(cum, 0.95), len(sorted_p) - 1)]
-        thresh68 = sorted_p[min(np.searchsorted(cum, 0.68), len(sorted_p) - 1)]
-        m95 = posterior >= thresh95
-        m68 = posterior >= thresh68
+        z, profile = _profile_on_curve(ll, flavors, fs)
 
         ax.fill_between(
-            fs, 0.0, posterior, where=m95, color="#9ecae1", alpha=0.30, label="95% CI"
+            fs, 0.0, profile, where=(z >= Z_95), color="#9ecae1", alpha=0.30, label="95% CL"
         )
         ax.fill_between(
-            fs, 0.0, posterior, where=m68, color="#3182bd", alpha=0.35, label="68% CI"
+            fs, 0.0, profile, where=(z >= Z_68), color="#3182bd", alpha=0.35, label="68% CL"
         )
-        ax.plot(fs, posterior, color="#1f77b4", linewidth=2.3)
+        ax.plot(fs, profile, color="#1f77b4", linewidth=2.3)
         ax.set_xlim(0.0, 1.0)
         ax.set_xticks(np.linspace(0.0, 1.0, 6))
         ax.set_xlabel(r"$f_{\mu,\rm s}$")
         ax.grid(True, alpha=0.22)
 
-    axes[0].set_ylabel("Posterior density")
+    axes[0].set_ylabel(r"$\lambda(f_{\mu,\mathrm{s}})$")
     handles, labels = axes[1].get_legend_handles_labels()
     if handles:
         dedup = dict(zip(labels, handles))
@@ -196,11 +172,6 @@ def plot_muon_fraction_panels(flavors, ll_panels, savepath):
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.abspath(__file__))
     flavors, ll_panels = _compute_ll_panels_from_figure3(base_dir)
-
-    fs = np.linspace(0, 1, 200)
-    plot1 = (fs, return_posterior(ll_panels[0], flavors, fs))
-    plot2 = (fs, return_posterior(ll_panels[1], flavors, fs))
-    plot3 = (fs, return_posterior(ll_panels[2], flavors, fs))
 
     plot_muon_fraction_panels(
         flavors,

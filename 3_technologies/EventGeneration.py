@@ -1,6 +1,5 @@
 import numpy as np
-from scipy.special import gammaln, logsumexp
-from scipy.stats import binom
+from scipy.special import gammaln
 
 from Helpers import _clip01, integrate_bin_I
 
@@ -92,7 +91,8 @@ def _expected_components_per_bin(E, edges, A_NC, A_e, A_mu, A_tau,
 def events_per_coarse_bin_single(E: np.ndarray, edges: np.ndarray,
                                  A_e: np.ndarray, A_mu: np.ndarray, A_tau: np.ndarray,
                                  coarse_edges: np.ndarray,
-                                 fe: float, fmu: float, ftau: float, norm: float = 1.0,
+                                 fe: float, fmu: float, ftau: float,
+                                 norm: float = 1.0,
                                  energies=None, flux=None):
     if energies is None:
         energies = energies_mid
@@ -126,56 +126,30 @@ def poisson_loglike(k, lam):
 
 def loglike_channel_mult(Nobs_total, Nobs_mult, Nexp_total,
                          Nexp_CC_mu, Nexp_CC_tau, rmu_vec, rtau_vec):
-    Nobs_total = np.asarray(Nobs_total, int)
-    Nobs_mult  = np.asarray(Nobs_mult,  int)
-    Nexp_total = np.asarray(Nexp_total, float)
-
-    frac_mu  = np.clip(Nexp_CC_mu  / np.clip(Nexp_total, 1e-12, None), 0.0, 1.0)
-    frac_tau = np.clip(Nexp_CC_tau / np.clip(Nexp_total, 1e-12, None), 0.0, 1.0)
-
-    p_mu  = _clip01(frac_mu  * np.asarray(rmu_vec,  float))
-    p_tau = _clip01(frac_tau * np.asarray(rtau_vec, float))
-
-    ll = 0.0
-    for nobs, mlos, p1, p2 in zip(Nobs_total, Nobs_mult, p_mu, p_tau):
-        k0 = max(0, mlos - nobs); k1 = min(mlos, nobs)
-        ks = np.arange(k0, k1+1, dtype=int)
-        terms = binom.logpmf(ks,  nobs, p1) + binom.logpmf(mlos-ks, nobs, p2)
-        ll += logsumexp(terms) if ks.size else -np.inf
-    return float(ll)
+    lam_mult = np.clip(
+        np.asarray(Nexp_CC_mu, float) * np.asarray(rmu_vec, float)
+        + np.asarray(Nexp_CC_tau, float) * np.asarray(rtau_vec, float),
+        1e-12, None,
+    )
+    return float(poisson_loglike(np.asarray(Nobs_mult, float), lam_mult))
 
 
 def loglike_channel_ML(Nobs_total, Nobs_ML, Nexp_total, Nexp_CC_e, T_vec, F_vec):
-
-    Nobs_total = np.asarray(Nobs_total, int)
-    Nobs_ML    = np.asarray(Nobs_ML,    int)
     Nexp_total = np.asarray(Nexp_total, float)
-    frac_e     = np.clip(Nexp_CC_e / np.clip(Nexp_total, 1e-12, None), 0.0, 1.0)
-    ptp = _clip01(frac_e * np.asarray(T_vec, float))
-    pfp = _clip01((1.0 - frac_e) * np.asarray(F_vec, float))
+    lam_ML = np.clip(
+        np.asarray(Nexp_CC_e, float) * np.asarray(T_vec, float)
+        + (Nexp_total - np.asarray(Nexp_CC_e, float)) * np.asarray(F_vec, float),
+        1e-12, None,
+    )
+    return float(poisson_loglike(np.asarray(Nobs_ML, float), lam_ML))
 
-    ll = 0.0
-    for nobs, mlos, p1, p2 in zip(Nobs_total, Nobs_ML, ptp, pfp):
-        # valid k so both binomials are defined
-        k0 = max(0, mlos - nobs); k1 = min(mlos, nobs)
-        ks = np.arange(k0, k1+1, dtype=int)
-        terms = binom.logpmf(ks,  nobs, p1) + binom.logpmf(mlos-ks, nobs, p2)
-        ll += logsumexp(terms) if ks.size else -np.inf
-    return float(ll)
 
-def loglike_glashow(
-    Nobs_total,   
-    N_glashow,    
-    Nexp_total,  
-    Nexp_e,  
-    p_glashow       
-):
-
-    frac_ebar = np.clip(Nexp_e / np.clip(Nexp_total, 1e-12, None), 0.0, 1.0)
-    pG = _clip01(frac_ebar * p_glashow)
-    ll = np.sum(binom.logpmf(N_glashow, Nobs_total, pG))
-
-    return float(ll)
+def loglike_glashow(Nobs_total, N_glashow, Nexp_total, Nexp_e, p_glashow):
+    lam_g = np.clip(
+        np.asarray(Nexp_e, float) * np.asarray(p_glashow, float),
+        1e-12, None,
+    )
+    return float(poisson_loglike(np.asarray(N_glashow, float), lam_g))
 
 
 def loglike_combined(
@@ -220,17 +194,4 @@ def loglike_combined_tau(E, edges, A_e, A_mu, A_tau, coarse_edges,
 
     ll  = loglike_totals_poisson(Nobs_total, Nexp_total)
     ll += loglike_glashow(Nobs_total, N_glashow, Nexp_total, Nexp_e, p_glashow)
-    return ll
-
-
-def loglike_combined_tau2(E, edges, A_e, A_mu, A_tau, coarse_edges,
-                     fe, fmu, ftau, fe0, fmu0, ftau0,
-                     Nobs_total, N_glashow, p_glashow, energies, flux):
-
-    Nexp_total, Nexp_e, Nexp_mu, Nexp_tau = _expected_components_per_bin_tau(
-        E, edges,  A_e, A_mu, A_tau, coarse_edges, fe, fmu, ftau, fe0, fmu0, ftau0, energies,flux
-    )
-
-    ll  = loglike_totals_poisson(Nobs_total, Nexp_total)
-    #ll += loglike_glashow(Nobs_total, N_glashow, Nexp_total, Nexp_e, p_glashow)
     return ll

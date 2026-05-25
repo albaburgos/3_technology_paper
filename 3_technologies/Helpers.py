@@ -210,31 +210,19 @@ def make_log_bins(edges: np.ndarray, bin_width_log10: float) -> np.ndarray:
     b = np.unique(raw)
     return b
 
-def integrate_bin_I_mese(edges: np.ndarray, centers: np.ndarray, A: np.ndarray, Emin: float, Emax: float) -> float:
+def integrate_bin_I(edges: np.ndarray, centers: np.ndarray, A: np.ndarray,
+                    Emin: float, Emax: float, energies_Au, flux) -> float:
+    xp = np.asarray(energies_Au, dtype=float).ravel()
+    fp = np.asarray(flux,        dtype=float).ravel()
     total = 0.0
     for j in range(len(centers)):
-
-        total_flux = np.interp(centers[j], energies_mid, fluxMid)
+        total_flux = np.interp(float(centers[j]), xp, fp)
         a = edges[j]
         b = edges[j+1]
         L = max(a, Emin)
         U = min(b, Emax)
         if L < U:
-            total += A[j] * total_flux * (U-L) * OMEGA* T_EXPOSURE
-    return float(total)
-
-def integrate_bin_I(edges: np.ndarray, centers: np.ndarray, A: np.ndarray, Emin: float, Emax: float, energies_Au, flux) -> float:
-    total = 0.0
-
-    for j in range(len(centers)): 
-
-        total_flux = np.interp(centers[j], energies_Au, flux)
-        a = edges[j]
-        b = edges[j+1]
-        L = max(a, Emin)
-        U = min(b, Emax)
-        if L < U:
-            total += A[j] * total_flux * (U-L) * OMEGA* T_EXPOSURE
+            total += A[j] * total_flux * (U-L) * OMEGA * T_EXPOSURE
     return float(total)
 
 def generate_flavor_grid(step: float = 0.2) -> List[Tuple[float, float, float]]:
@@ -301,6 +289,26 @@ def read_eff_area_csv_toise(path: str):
     A_tau = df["A_tau"].to_numpy(dtype=float)* 1e4
     order = np.argsort(E)
     return E[order], A_e[order], A_mu[order], A_tau[order]
+
+
+def read_eff_area_csv_toise_perchannel(path: str):
+    """
+    Read per-channel TOISE CSV (written by Eff_Areas_TOISE.py).
+    Columns: E_GeV, {chan}_e, {chan}_mu, {chan}_tau for each channel.
+    Returns: E (sorted), list of (A_e, A_mu, A_tau) per channel in cm², channel_names.
+    """
+    df = pd.read_csv(path)
+    E = df["E_GeV"].to_numpy(dtype=float)
+    order = np.argsort(E)
+    E = E[order]
+    channel_names = [c[:-2] for c in df.columns if c.endswith("_e")]
+    triplets = []
+    for name in channel_names:
+        A_e   = df[f"{name}_e"].to_numpy(dtype=float)[order] * 1e4
+        A_mu  = df[f"{name}_mu"].to_numpy(dtype=float)[order] * 1e4
+        A_tau = df[f"{name}_tau"].to_numpy(dtype=float)[order] * 1e4
+        triplets.append((A_e, A_mu, A_tau))
+    return E, triplets, channel_names
 
 
 def _clip01(p):

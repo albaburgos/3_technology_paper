@@ -1,10 +1,9 @@
 # Figure 3: flavor sensitivity by energy decade.
 
 # Panels:
-# 1) 10^13-10^15 eV: MESE21
-# 2) 10^15-10^17 eV: ic-gen2 + Earth-skimming + Radio
+# 1) 10^13-10^15 eV: ICgen2
+# 2) 10^15-10^17 eV: IC-gen2 + Earth-skimming + Radio
 # 3) 10^17-10^19 eV: Earth-skimming + Radio
-
 
 import os
 
@@ -29,6 +28,7 @@ from Helpers import (
     logx_interp,
     read_eff_area_csv_gen,
     read_eff_area_csv_toise,
+    read_eff_area_csv_toise_perchannel,
     read_effarea_csv,
     read_effarea_csv_radio,
     read_effarea_csv_stacked,
@@ -36,7 +36,7 @@ from Helpers import (
 from Plotting import plot_three_ternaries
 
 BIN_WIDTH_LOG10 = 0.4
-T_EXPOSURE = 10 * 365.25 * 24 * 3600.0
+T_EXPOSURE = 15 * 365.25 * 24 * 3600.0
 OMEGA = 4 * np.pi
 GRID_STEP = 1 / 40
 
@@ -151,36 +151,38 @@ def compute_icgen2_toise_ll_decade_perfect(
     fe0,
     fmu0,
     ftau0,
+    energies_mid,
+    flux_mid,
     base_dir,
 ):
     """
-    Perfect flavor resolution
+    Independent Poisson LL per channel (5 channels) per coarse bin.
+    ftau = 1 - fe - fmu so only 2 free parameters contribute to the LL
     """
-    toise_path = _resolve_path(base_dir, "effareasgen2_toise_allflavor.csv")
-    E_gen2, A_e, A_mu, A_tau = read_eff_area_csv_toise(toise_path)
+    toise_path = _resolve_path(base_dir, "effareasgen2_toise_perchannel.csv")
+    E_gen2, channel_triplets, channel_names = read_eff_area_csv_toise_perchannel(toise_path)
     edges_gen2 = geometric_edges_from_centers(E_gen2)
 
-    # Pure-flavor integrals: events_per_coarse_bin_single with unit fraction
-    I_e   = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 1.0, 0.0, 0.0)
-    I_mu  = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 0.0, 1.0, 0.0)
-    I_tau = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 0.0, 0.0, 1.0)
+    channels = []
+    total_asimov = 0.0
+    for A_e, A_mu, A_tau in channel_triplets:
+        I_e   = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 1.0, 0.0, 0.0, energies=energies_mid, flux=flux_mid)
+        I_mu  = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 0.0, 1.0, 0.0, energies=energies_mid, flux=flux_mid)
+        I_tau = events_per_coarse_bin_single(E_gen2, edges_gen2, A_e, A_mu, A_tau, coarse_edges, 0.0, 0.0, 1.0, energies=energies_mid, flux=flux_mid)
+        k_obs = I_e * fe0 + I_mu * fmu0 + I_tau * ftau0
+        channels.append((I_e, I_mu, I_tau, k_obs))
+        total_asimov += float(np.sum(k_obs))
 
-    k_e   = I_e   * fe0
-    k_mu  = I_mu  * fmu0
-    k_tau = I_tau * ftau0
-
-    total_asimov = np.sum(k_e) + np.sum(k_mu) + np.sum(k_tau)
     print(f"[TOISE perfect] Asimov total: {total_asimov:.1f}  "
-          f"(e={np.sum(k_e):.1f}, mu={np.sum(k_mu):.1f}, tau={np.sum(k_tau):.1f})")
+          f"({len(channel_names)} channels: {', '.join(channel_names)})")
 
     ll_grid = np.full(len(flavors), -np.inf, dtype=float)
-    for j, (fe, fmu, _) in enumerate(flavors):
-        lam_e  = I_e  * fe
-        lam_mu = I_mu * fmu
-        ll_grid[j] = (
-            loglike_totals_poisson(k_e,  lam_e)
-            + loglike_totals_poisson(k_mu, lam_mu)
-        )
+    for j, (fe, fmu, ftau) in enumerate(flavors):
+        ll = 0.0
+        for I_e, I_mu, I_tau, k_obs in channels:
+            lam = I_e * fe + I_mu * fmu + I_tau * ftau
+            ll += loglike_totals_poisson(k_obs, lam)
+        ll_grid[j] = ll
     return ll_grid
 
 
@@ -232,8 +234,8 @@ def compute_earthskimming_ll_decade(
             fe0,
             fmu0,
             ftau0,
-            tau_obs.astype(int),
-            np.rint(glash_obs).astype(int),
+            tau_obs,
+            glash_obs,
             p_vebar_binned,
             energies_mid,
             flux_mid,
@@ -297,9 +299,9 @@ def compute_radio_ll_decade(
             fe0,
             fmu0,
             ftau0,
-            Nobs_total=nobs_total.astype(int),
-            Nobs_ML=np.rint(nobs_ml).astype(int),
-            Nobs_mult=np.rint(nobs_mult).astype(int),
+            Nobs_total=nobs_total,
+            Nobs_ML=nobs_ml,
+            Nobs_mult=nobs_mult,
             T_vec=truthx,
             F_vec=0.02 * np.ones_like(truthx),
             rmu_vec=mux,
@@ -323,7 +325,6 @@ def main():
 
     fe0, fmu0, ftau0 = 0.30, 0.36, 0.34
     fe0_p2, fmu0_p2, ftau0_p2 = 0.17, 0.45, 0.37
-    # 0.20, 0.408, 0.384
 
     flavors = generate_flavor_grid(step=GRID_STEP)
     fe_arr = np.array([f[0] for f in flavors], dtype=float)
@@ -336,7 +337,7 @@ def main():
 
 
     ll_gen2_toise_13_15 = compute_icgen2_toise_ll_decade_perfect(
-        flavors, decade_13_15, fe0, fmu0, ftau0, base_dir
+        flavors, decade_13_15, fe0, fmu0, ftau0, energies_mid, flux_mid, base_dir
     )
 
 
@@ -348,14 +349,13 @@ def main():
     )
 
     ll_gen2_toise_15_17 = compute_icgen2_toise_ll_decade_perfect(
-        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, base_dir
+        flavors, decade_15_17, fe0_p2, fmu0_p2, ftau0_p2, energies_mid, flux_mid, base_dir
     )
 
     ll_panel2 = (
         ll_gen2_toise_15_17
         + ll_earth_15_17
-        + ll_radio_
-        15_17
+        + ll_radio_15_17
     )
 
     

@@ -103,77 +103,6 @@ E3mu, A3mu = effective_area_from_Nev(E3, E3_Mu, T_years, DeltaOmega)
 E3e, A3e = effective_area_from_Nev(E3, E3_e, T_years, DeltaOmega)
 E3tau, A3tau = effective_area_from_Nev(E3, E3_Tau, T_years, DeltaOmega)
 
-###------------------------ IC-gen2 from reference ------------------------
-
-# Flavor sensitivity IC-gen2 available for cascades
-# Use interpolation for track flavor sensitivity based on IC-MESE
-# Toise Code https://github.com/icecube/toise/blob/master/notebooks/tutorials/003-Effective_Areas.ipynb
-
-E_gen2_gev = np.array([1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10])
-b1 = np.array([1e-1, 2e1, 1e2, 3e2, 7e1, 4e0, 2e-1, 1e-2]) * 0.927/(4*np.pi) * 1e4
-b2 = np.array([1e-1, 2e1, 3e2, 1e3, 1.2e3, 6e2,6e1, 3e0]) * 0.442/(4*np.pi)*1e4
-b3 = np.array([1e-1, 2e1, 3e2, 2e3, 6e3, 1.5e4, 3e4, 6e4]) * 0.402/(4*np.pi)*1e4
-b4 = np.array([1e-1, 2e1, 2e2, 9e2, 2e3, 7e3, 1.6e4,4e4 ]) * 0.442/(4*np.pi)*1e4
-b5 = np.array([1e-1, 1e1, 1e2, 4e2, 1.5e3, 3e3,8e3,  2e4]) * 0.927/(4*np.pi)*1e4
-
-E_casce = np.array([1e4, 1e5, 1e6, 3e6, 7e6, 8e6, 1e7, 1e8, 1e9, 1e10 ])
-casce = np.array([1e-1, 3e1, 1.5e2, 3e2, 1.8e3, 2e3, 4.5e2, 7e2, 2e3,4e3])*1e4
-E_cascmu = np.array([1e4, 6e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11])
-cascmu = np.array([1e-2, 1, 5, 40, 1.5e2, 4e2, 1e3, 2e3, 4e3])*1e4
-E_casctau = np.array([1e4, 6e4, 1e5, 1e6, 1e7, 1e8,  1e9, 1e10, 1e11])
-casctau = np.array([1e-2, 2, 10, 1e2, 2e2, 4e2, 1e3, 2e3, 4e3])*1e4
-E_common = E_casce
-
-b1_i = np.interp(E_common, E_gen2_gev, b1)
-b2_i = np.interp(E_common, E_gen2_gev, b2)
-b3_i = np.interp(E_common, E_gen2_gev, b3)
-b4_i = np.interp(E_common, E_gen2_gev, b4)
-b5_i = np.interp(E_common, E_gen2_gev, b5)
-casce_i = np.interp(E_common, E_casce, casce)
-cascmu_i = np.interp(E_common, E_cascmu, cascmu)
-casctau_i = np.interp(E_common, E_casctau, casctau)
-
-A_track = b1_i + b2_i + b3_i + b4_i + b5_i
-
-eminIC = min(np.min(E3e),  np.min(E3tau),  np.min(E3mu))
-emaxIC = max(np.max(E3e),  np.max(E3mu),  np.max(E3tau))
-masterIC = np.logspace(np.log10(eminIC), np.log10(emaxIC), 300)
-IC_e   = log_interp(masterIC, E3e,   A3e)
-IC_mu  = log_interp(masterIC, E3mu,  A3mu)
-IC_tau = log_interp(masterIC, E3tau, A3tau)
-IC_sum = IC_mu + IC_e + IC_tau
-den = np.where(IC_sum > 0.0, IC_sum, 1.0)
-f_mu  = IC_mu  / den
-f_e   = IC_e   / den
-f_tau = IC_tau / den
-
-log_master = np.log10(masterIC)
-log_dst    = np.log10(E_common)
-
-f_mu_at_gen2  = np.interp(log_dst, log_master, f_mu,  left=f_mu[0],  right=f_mu[-1])
-f_e_at_gen2   = np.interp(log_dst, log_master, f_e,   left=f_e[0],   right=f_e[-1])
-f_tau_at_gen2 = np.interp(log_dst, log_master, f_tau, left=f_tau[0], right=f_tau[-1])
-
-track_mu  = f_mu_at_gen2  * A_track
-track_e   = f_e_at_gen2   * A_track
-track_tau = f_tau_at_gen2 * A_track
-
-df_out = pd.DataFrame({
-    "E_GeV":     E_common,
-    "track_mu":  track_mu,
-    "track_e":   track_e,
-    "track_tau": track_tau,
-    "casc_e":    casce_i,
-    "casc_mu":   cascmu_i,
-    "casc_tau":  casctau_i,
-})
-
-# Save to CSV
-OUTPUT_CSV = "final/effareasgen2.csv"
-os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
-df_out.to_csv(OUTPUT_CSV, index=False, float_format="%.8e")
-print(f"Saved CSV -> {OUTPUT_CSV}  ({len(df_out)} rows)")
-
 # ------------------------ MESE ------------------------
 
 emin = min(E1mu)
@@ -212,3 +141,76 @@ df_out.to_csv(OUTPUT_CSV, index=False)
 print(f"Saved stacked CSV -> {OUTPUT_CSV}")
 
 
+
+
+
+# ---------- IC-gen2 from reference ------------------------
+
+# # Flavor sensitivity IC-gen2 available for cascades
+# # Use interpolation for track flavor sensitivity based on IC-MESE
+# # Toise Code https://github.com/icecube/toise/blob/master/notebooks/tutorials/003-Effective_Areas.ipynb
+
+# E_gen2_gev = np.array([1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10])
+# b1 = np.array([1e-1, 2e1, 1e2, 3e2, 7e1, 4e0, 2e-1, 1e-2]) * 0.927/(4*np.pi) * 1e4
+# b2 = np.array([1e-1, 2e1, 3e2, 1e3, 1.2e3, 6e2,6e1, 3e0]) * 0.442/(4*np.pi)*1e4
+# b3 = np.array([1e-1, 2e1, 3e2, 2e3, 6e3, 1.5e4, 3e4, 6e4]) * 0.402/(4*np.pi)*1e4
+# b4 = np.array([1e-1, 2e1, 2e2, 9e2, 2e3, 7e3, 1.6e4,4e4 ]) * 0.442/(4*np.pi)*1e4
+# b5 = np.array([1e-1, 1e1, 1e2, 4e2, 1.5e3, 3e3,8e3,  2e4]) * 0.927/(4*np.pi)*1e4
+
+# E_casce = np.array([1e4, 1e5, 1e6, 3e6, 7e6, 8e6, 1e7, 1e8, 1e9, 1e10 ])
+# casce = np.array([1e-1, 3e1, 1.5e2, 3e2, 1.8e3, 2e3, 4.5e2, 7e2, 2e3,4e3])*1e4
+# E_cascmu = np.array([1e4, 6e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11])
+# cascmu = np.array([1e-2, 1, 5, 40, 1.5e2, 4e2, 1e3, 2e3, 4e3])*1e4
+# E_casctau = np.array([1e4, 6e4, 1e5, 1e6, 1e7, 1e8,  1e9, 1e10, 1e11])
+# casctau = np.array([1e-2, 2, 10, 1e2, 2e2, 4e2, 1e3, 2e3, 4e3])*1e4
+# E_common = E_casce
+
+# b1_i = np.interp(E_common, E_gen2_gev, b1)
+# b2_i = np.interp(E_common, E_gen2_gev, b2)
+# b3_i = np.interp(E_common, E_gen2_gev, b3)
+# b4_i = np.interp(E_common, E_gen2_gev, b4)
+# b5_i = np.interp(E_common, E_gen2_gev, b5)
+# casce_i = np.interp(E_common, E_casce, casce)
+# cascmu_i = np.interp(E_common, E_cascmu, cascmu)
+# casctau_i = np.interp(E_common, E_casctau, casctau)
+
+# A_track = b1_i + b2_i + b3_i + b4_i + b5_i
+
+# eminIC = min(np.min(E3e),  np.min(E3tau),  np.min(E3mu))
+# emaxIC = max(np.max(E3e),  np.max(E3mu),  np.max(E3tau))
+# masterIC = np.logspace(np.log10(eminIC), np.log10(emaxIC), 300)
+# IC_e   = log_interp(masterIC, E3e,   A3e)
+# IC_mu  = log_interp(masterIC, E3mu,  A3mu)
+# IC_tau = log_interp(masterIC, E3tau, A3tau)
+# IC_sum = IC_mu + IC_e + IC_tau
+# den = np.where(IC_sum > 0.0, IC_sum, 1.0)
+# f_mu  = IC_mu  / den
+# f_e   = IC_e   / den
+# f_tau = IC_tau / den
+
+# log_master = np.log10(masterIC)
+# log_dst    = np.log10(E_common)
+
+# f_mu_at_gen2  = np.interp(log_dst, log_master, f_mu,  left=f_mu[0],  right=f_mu[-1])
+# f_e_at_gen2   = np.interp(log_dst, log_master, f_e,   left=f_e[0],   right=f_e[-1])
+# f_tau_at_gen2 = np.interp(log_dst, log_master, f_tau, left=f_tau[0], right=f_tau[-1])
+
+# track_mu  = f_mu_at_gen2  * A_track
+# track_e   = f_e_at_gen2   * A_track
+# track_tau = f_tau_at_gen2 * A_track
+
+# df_out = pd.DataFrame({
+#     "E_GeV":     E_common,
+#     "track_mu":  track_mu,
+#     "track_e":   track_e,
+#     "track_tau": track_tau,
+#     "casc_e":    casce_i,
+#     "casc_mu":   cascmu_i,
+#     "casc_tau":  casctau_i,
+# })
+
+# # Save to CSV
+# OUTPUT_CSV = "final/effareasgen2.csv"
+# os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
+# df_out.to_csv(OUTPUT_CSV, index=False, float_format="%.8e")
+# print(f"Saved CSV -> {OUTPUT_CSV}  ({len(df_out)} rows)")

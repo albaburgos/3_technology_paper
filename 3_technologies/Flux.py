@@ -69,4 +69,3 @@ def build_flux_hypothesis(hypothesis: str = "mid"):
         return energies_mid, flux_mid
     if key in {"high", "ta", "optimistic"}:
         return energies_ta, flux_ta
-    raise ValueError(f"Unknown flux hypothesis '{hypothesis}'. Use one of: low, mid, high.")
