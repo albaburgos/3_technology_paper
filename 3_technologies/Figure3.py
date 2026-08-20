@@ -196,7 +196,7 @@ def compute_earthskimming_ll_decade(
     flux_mid,
     base_dir,
 ):
-    eff9_path = _resolve_path(base_dir, "effareas9.csv")
+    eff9_path = _resolve_path(base_dir, "effareas_9.csv")
     Et, A_mut, A_taut, A_et = read_effarea_csv(eff9_path)
     edgest = geometric_edges_from_centers(Et)
 
@@ -253,7 +253,7 @@ def compute_radio_ll_decade(
     flux_mid,
     base_dir,
 ):
-    eff8_path = _resolve_path(base_dir, "effareas8.csv")
+    eff8_path = _resolve_path(base_dir, "effareas_8.csv")
     E, A_NC, A_mu, A_tau, A_e = read_effarea_csv_radio(eff8_path)
     edges = geometric_edges_from_centers(E)
 

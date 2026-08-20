@@ -105,7 +105,7 @@ def main():
     fmu_arr = np.array([g[1] for g in flavors], dtype=float)
     ftau_arr = np.array([g[2] for g in flavors], dtype=float)
 
-    E, A_NC, A_mu, A_tau, A_e = read_effarea_csv_radio(os.path.join(base_dir, "effareas8.csv"))
+    E, A_NC, A_mu, A_tau, A_e = read_effarea_csv_radio(os.path.join(base_dir, "effareas_8.csv"))
     edges = geometric_edges_from_centers(E)
 
     e_mid = np.sqrt(coarse_edges[:-1] * coarse_edges[1:])
@@ -203,11 +203,11 @@ def main():
         fmu_arr=fmu_arr,
         ftau_arr=ftau_arr,
         captions=(
-            "(1) Radio & Radar Low Flux\n$10^{2}$–$10^{4}$ PeV",
-            "(2) Radio & Radar Intermediate Flux\n$10^{2}$–$10^{4}$ PeV",
-            "(3) Radio & Radar High Flux\n$10^{2}$–$10^{4}$ PeV",
+            "(1) Radio Low Flux\n$10^{2}$–$10^{4}$ PeV",
+            "(2) Radio Intermediate Flux\n$10^{2}$–$10^{4}$ PeV",
+            "(3) Radio High Flux\n$10^{2}$–$10^{4}$ PeV",
         ),
-        savepath="MC_outputs/figure2.png",
+        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure2.png",
         textbox_text="high flux",
     )
 

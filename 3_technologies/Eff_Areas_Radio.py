@@ -1,4 +1,5 @@
-## Effective Areas Icecubegen2 radio + RNO-G + ARIANNA + ARA + RET-N (all-flavor sensitivity)
+## Effective Areas Icecubegen2 radio + RNO-G + ARIANNA + ARA (all-flavor sensitivity)
+## Detector response assumed from icecubegen2 simulations (coleman https://arxiv.org/abs/2402.02432)
 
 import os
 import numpy as np
@@ -11,13 +12,12 @@ DeltaOmega = 4*np.pi
 GEV_PER_PEV = 1e6
 PLOT_LINEWIDTH = 2.5
 
-OUTPUT_CSV = "Final/effareas8.csv"
+OUTPUT_CSV = "/Users/albaburgosmondejar/3_technology_paper/3_technologies/effareas_8.csv"
 PLOT_PNG   = "MC_outputs/combined_plot.png"
 SEC_PER_YEAR = 365.25 * 24 * 3600.0
 
 
 def _apply_plotting_text_style():
-    """Match typography settings used in Plotting.py."""
     plt.rcParams.update(
         {
             "font.size": 20,
@@ -70,9 +70,9 @@ E2Phi_ARIANNA = np.array([9e-6, 2e-6, 1.7e-6, 3e-6, 8e-6, 1.7e-5])
 E_ARA   = np.array([2e16,1e17,1e18, 1e19, 1e20, 1e21])
 E2Phi_ARA = np.array([1e-5,1.5e-6,6e-7, 4e-7, 8e-7, 2e-6])
 
-### RET-N
-E_RET   = np.array([2e15,5e15,1e16,3e16,6e16, 2e17, 5e17,2e18, 7e18, 2e19, 5e19])
-E2Phi_RET = np.array([1e-8,9e-9,5.7e-9,4e-9,3.2e-9, 1.5e-9, 9e-10, 6e-10, 8e-10, 1.5e-9, 2e-9])
+# ### RET-N
+# E_RET   = np.array([2e15,5e15,1e16,3e16,6e16, 2e17, 5e17,2e18, 7e18, 2e19, 5e19])
+# E2Phi_RET = np.array([1e-8,9e-9,5.7e-9,4e-9,3.2e-9, 1.5e-9, 9e-10, 6e-10, 8e-10, 1.5e-9, 2e-9])
 
 # ------------------------ Helpers ------------------------
 
@@ -137,25 +137,25 @@ A_e_interp = log_interp(E_interp, E, A_e)
 A_mu_interp = log_interp(E_interp, E, A_mu)
 A_tau_interp = log_interp(E_interp, E, A_tau)
 
-# ------------------------ Compute component A_eff RNO-G + ARA + ARIANNA + RET-n -------------------
+# ------------------------ Compute component A_eff RNO-G + ARA + ARIANNA -------------------
 
 E_rnogo, A_rnogo = effective_area_from_sensitivity(
     E_rnogo, E2Phi_rnogo
 )
 
-E_RET, A_RET = effective_area_from_sensitivity(
-    E_RET, E2Phi_RET
-)
+# E_RET, A_RET = effective_area_from_sensitivity(
+#     E_RET, E2Phi_RET
+# )
 
 E_ARA, A_ARA = effective_area_from_sensitivity(
-    E_rnogo, E2Phi_rnogo
+    E_ARA, E2Phi_ARA
 )
 
 E_ARIANNA, A_ARIANNA = effective_area_from_sensitivity(
     E_ARIANNA, E2Phi_ARIANNA)
 
-E_all_interp = np.logspace(np.log10(E_RET[0]), np.log10(E_ARA[-1]), 100)
-A_all_interp = log_interp(E_all_interp, E_rnogo, A_rnogo) + log_interp(E_all_interp, E_RET, A_RET) + log_interp(E_all_interp, E_ARA, A_ARA) +log_interp(E_all_interp, E_ARIANNA, A_ARIANNA) 
+E_all_interp = np.logspace(np.log10(E_ARIANNA[0]), np.log10(E_ARA[-1]), 100)
+A_all_interp = log_interp(E_all_interp, E_rnogo, A_rnogo) + log_interp(E_all_interp, E_ARA, A_ARA) +log_interp(E_all_interp, E_ARIANNA, A_ARIANNA) 
 
 A_tot_interp = A_NC_interp + A_e_interp + A_mu_interp + A_tau_interp
 eps = 1e-300  
@@ -175,34 +175,19 @@ f_sum = f_stack.sum(axis=0) + eps
 f_stack /= f_sum
 f_NC, f_e, f_mu, f_tau = f_stack
 
-A_rnogo_NC  = A_all_interp * f_NC
-A_rnogo_e   = A_all_interp * f_e
-A_rnogo_mu  = A_all_interp * f_mu
-A_rnogo_tau = A_all_interp * f_tau
-
-# ------------------------ Plot ------------------------
-E_interp_pev = E_interp / GEV_PER_PEV
-plt.figure(figsize=(9,6), dpi=140)
-plt.loglog(E_interp_pev, A_mu_interp, linewidth=PLOT_LINEWIDTH, label="Muon CC")
-plt.loglog(E_interp_pev, A_tau_interp, linewidth=PLOT_LINEWIDTH, label="Tau CC")
-plt.loglog(E_interp_pev, A_e_interp, linewidth=PLOT_LINEWIDTH, label="Electron CC")
-plt.loglog(E_interp_pev, A_NC_interp, linewidth=PLOT_LINEWIDTH, label="NC")
-plt.xlabel("Energy (PeV)")
-plt.ylabel(r"IceCube-Gen2 Radio $A_{\rm eff}$ (cm$^2$)")
-plt.grid(True, which="both", alpha=0.3)
-plt.legend(loc="lower right", ncol=2)
-plt.tight_layout()
-plt.savefig(PLOT_PNG)
-print(f"Saved plot: {PLOT_PNG}")
+A_all_NC  = A_all_interp * f_NC
+A_all_e   = A_all_interp * f_e
+A_all_mu  = A_all_interp * f_mu
+A_all_tau = A_all_interp * f_tau
 
 # ------------------------ Save CSV ------------------------
 os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 df = pd.DataFrame({
     "E_GeV": E_interp,
-    "A_NC_m2": A_NC_interp+A_rnogo_NC,
-    "A_mu_m2": A_mu_interp+A_rnogo_tau,
-    "A_tau_m2": A_tau_interp+A_rnogo_mu,
-    "A_e_m2": A_e_interp+A_rnogo_e ,
+    "A_NC_m2": A_NC_interp+A_all_NC,
+    "A_mu_m2": A_mu_interp+A_all_tau,
+    "A_tau_m2": A_tau_interp+A_all_mu,
+    "A_e_m2": A_e_interp+A_all_e ,
 })
 df.to_csv(OUTPUT_CSV, index=False)
 print(f"Saved CSV:  {OUTPUT_CSV}")

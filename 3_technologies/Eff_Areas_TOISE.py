@@ -1,5 +1,6 @@
 """
 Extract IceCube-Gen2 effective areas from TOISE per flavor and per channel, write to CSV.
+optical cherenkov
 """
 
 import warnings

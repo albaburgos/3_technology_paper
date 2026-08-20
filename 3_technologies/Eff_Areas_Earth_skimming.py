@@ -1,9 +1,8 @@
-
-
 ## Source: Snowmass paper Figure 18 https://arxiv.org/pdf/2203.08096 at 90%CL
-## (Updated Trinity Sensitivity estimates from https://arxiv.org/pdf/2509.18236 Figure 2 at 90%CL)
-## TAMBO cross-referenced against https://arxiv.org/abs/2507.08070 Figure 3 Aperture Plot 
+## QinRui Acceptance values for TAMBO and TRINITY https://arxiv.org/pdf/2607.26128
 
+# TAMBO FOV 120*30 deg = 0.2806sr. 120 in azimuth, 30 in zenith
+# Trinity FOV 5deg below horizon x 60 azimuth = 0.09126
 
 import os
 import numpy as np
@@ -12,34 +11,20 @@ import matplotlib.pyplot as plt
 from Helpers import log_interp
 
 
-OUTPUT_CSV = "effareasEarth.csv"
+OUTPUT_CSV = "/Users/albaburgosmondejar/3_technology_paper/3_technologies/effareas_9.csv"
 SEC_PER_YEAR = 365.25 * 24 * 3600.0
+GEV_PER_PEV = 1e6
 
-# ------------------------ Helpers ------------------------
-def flux(E, phi0_per_flavor=2.72e-18, gamma=2.54, E0=1e5):
-    return phi0_per_flavor * ((E / E0) ** (-gamma))
+def effective_area_from_aperture(E_grid, Aperture_pts_tau, Aperture_pts_e, angle):
 
-def effective_area_from_Nev(E_GeV, N_ev, T_years, DeltaOmega):
-    E_GeV = np.asarray(E_GeV, dtype=float)
-    N_ev  = np.asarray(N_ev, dtype=float)
+    E = np.logspace(np.log10(E_grid.min()), np.log10(E_grid.max()), 300)
+    A_tau = log_interp(E, E_grid, Aperture_pts_tau)
+    A_e = log_interp(E, E_grid, Aperture_pts_e)
 
-    order = np.argsort(E_GeV)
-    E_GeV = E_GeV[order]
-    N_ev  = N_ev[order]
+    A_final_tau = A_tau *1e4 * angle / ( 4*np.pi ) 
+    A_final_e = A_e*1e4 * angle / (  4*np.pi )
 
-    # Geometric bin edges from centers
-    edges = np.zeros(len(E_GeV) + 1)
-    for i in range(1, len(E_GeV)):
-        edges[i] = np.sqrt(E_GeV[i-1] * E_GeV[i])
-    edges[0]  = E_GeV[0]  / np.sqrt(E_GeV[1] / E_GeV[0])
-    edges[-1] = E_GeV[-1] * np.sqrt(E_GeV[-1] / E_GeV[-2])
-
-    T_sec = T_years * SEC_PER_YEAR
-    dE = np.diff(edges)
-
-    Aeff_cm2 = N_ev / (T_sec * DeltaOmega * flux(E_GeV) * dE)
-    Aeff_m2 = Aeff_cm2/10e4
-    return E_GeV, Aeff_cm2
+    return E, A_final_e, A_final_tau
 
 
 def effective_area_from_sensitivity(E_pts, E2Phi_pts):
@@ -76,25 +61,25 @@ E_tambo2, A_tambo = effective_area_from_sensitivity(
 E_tambo_interp = np.logspace(np.log10(E_tambo2[0]), np.log10(E_tambo2[-1]), 100)
 A_tambo_interp = log_interp(E_tambo_interp, E_tambo2, A_tambo)
 
-# TAMBO from Aperture Plot 
-tambo_angle = 4*np.pi/0.1
-tambo_years = 1
-tambo_E_GeV_base = np.array([3e5, 4e5, 1e6, 2e6, 4e6, 5e6, 6e6, 7e6, 8e6, 1e7, 3e7, 1e8, 4e8, 1e9], dtype=float)
-tambo_all_ap_m2sr_base = np.array([1, 9, 50, 150, 500, 1000, 3000, 4000, 3000, 2000, 6000, 20000, 40000, 50000], dtype=float)
-tambo_tau_ap_m2sr_base = np.array([1, 9, 50, 150, 500, 600, 800, 1000, 1200, 2000, 6000, 20000, 40000, 50000], dtype=float)
+# TAMBO from Acceptance (5k), energies in GeV
+tambo_E_GeV_base_5k = np.array([1e0, 5e0, 6.3e0, 8e0, 1.2e1, 3e1, 1e2], dtype=float) * GEV_PER_PEV
+tambo_tau_ap_m2sr_base_5k = np.array([1e2, 1.3e3, 1.7e3, 2e3, 4e3, 1.5e4, 4e4], dtype=float)
+tambo_ve_ap_m2sr_base_5k = np.array([0, 1e2, 4e3, 1e3, 1e2, 0, 0], dtype=float)
+E_TAMBO_5k, Eff_TAMBO_ve_5k, Eff_TAMBO_tau_5k = effective_area_from_aperture(
+    tambo_E_GeV_base_5k, tambo_tau_ap_m2sr_base_5k, tambo_ve_ap_m2sr_base_5k, 0.2806)
 
-E_tambo = np.logspace(np.log10(tambo_E_GeV_base.min()), np.log10(tambo_E_GeV_base.max()), 200)
-AOm_tambo_tau = log_interp(E_tambo, tambo_E_GeV_base, tambo_tau_ap_m2sr_base)     
-AOm_tambo_all = log_interp(E_tambo, tambo_E_GeV_base, tambo_all_ap_m2sr_base)       
-AOm_tambo_e   = np.abs(AOm_tambo_all - AOm_tambo_tau)            
-
-A_tambo_e = AOm_tambo_e *10e4 / (tambo_angle*tambo_years )
-A_tambo_tau = AOm_tambo_tau*10e4  / (tambo_angle*tambo_years)
-
+# TAMBO from Acceptance (22k), energies in GeV
+tambo_E_GeV_base_22k = np.array([1e0, 4.4e0, 5e0, 6.3e0, 8e0, 1.8e1, 3e1, 1e2], dtype=float) * GEV_PER_PEV
+tambo_all_ap_m2sr_base_22k = np.array([4e2, 3e3, 4.5e3, 6e3, 7e3, 2e4, 4.5e4, 1.2e5], dtype=float)
+tambo_ve_ap_m2sr_base_22k = np.array([0, 1e2, 5e2, 1.5e4, 2.8e3, 1e2, 0, 0], dtype=float)
+E_TAMBO_22k, Eff_TAMBO_ve_22k, Eff_TAMBO_tau_22k = effective_area_from_aperture(
+    tambo_E_GeV_base_22k, tambo_all_ap_m2sr_base_22k, tambo_ve_ap_m2sr_base_22k, 0.2806)
 
 plt.figure(figsize=(7,5))
-plt.loglog(E_tambo, A_tambo_tau, label="TAMBO τ channel (base)")
-plt.loglog(E_tambo, A_tambo_e, label="TAMBO e channel (base)")
+line_tambo_tau_5k, = plt.loglog(E_TAMBO_5k, Eff_TAMBO_tau_5k, label="TAMBO 5k τ channel")
+plt.loglog(E_TAMBO_5k, Eff_TAMBO_ve_5k, ls="--", color=line_tambo_tau_5k.get_color(), label="TAMBO 5k e channel")
+line_tambo_tau_22k, = plt.loglog(E_TAMBO_22k, Eff_TAMBO_tau_22k, label="TAMBO 22k τ channel")
+plt.loglog(E_TAMBO_22k, Eff_TAMBO_ve_22k, ls="--", color=line_tambo_tau_22k.get_color(), label="TAMBO 22k e channel")
 plt.loglog(E_tambo_interp, A_tambo_interp, "--", label="TAMBO (from sensitivity)")
 plt.xlabel("Energy [GeV]")
 plt.ylabel("Effective area [cm^2]")
@@ -106,28 +91,29 @@ plt.show()
 
 # Conclude: TAMBO from Snowmass paper is consistent with TAMBO paper https://arxiv.org/abs/2507.08070
 
-# ------------------------ Probability Glashow Resonance ------------------------
-
-p_vebar = A_tambo_e / (A_tambo_e + A_tambo_tau)
-p_vtau  = A_tambo_tau / (A_tambo_e + A_tambo_tau)
-
-
 # ------------------------------Other Earth-Skimming Experiments ---------------------------------
 
-### Trinity
-E_trinity   = np.array([1e15,2e15,1e16,4e16,1e17,1e18,1e19])
-E2Phi_trinity = np.array([1.2e-8,2.8e-9,1e-9,6e-10,5e-10,1.3e-9,8.5e-9])
-E_trinity, A_trinity = effective_area_from_sensitivity(
-    E_trinity, E2Phi_trinity)
+### Trinity from aperture plots (new paper), energies in GeV
+trinity_all_GeV = np.array([1.2e0, 3e0, 6e0, 8e0, 1e1, 2e1, 4e1, 7e1, 1e2], dtype=float) * GEV_PER_PEV
+trinity_all_ap_m2sr = np.array([1e2, 1.6e3, 8e3, 1.5e4, 2e4, 5.5e4, 1.5e5, 3e5, 4e5], dtype=float)
+trinity_ve_GeV = np.array([5e0, 6e0, 1.3e1, 2.3e1], dtype=float) * GEV_PER_PEV
+trinity_ve_ap_m2sr = np.array([1e2, 6e2, 3e2, 1e2], dtype=float)
 
-E_trinity_interp = np.logspace(np.log10(E_trinity[0]), np.log10(E_trinity[-1]), 100)
-A_trinity_interp = log_interp(E_trinity_interp, E_trinity, A_trinity)
+E_trinity_new = np.logspace(np.log10(trinity_all_GeV.min()), np.log10(trinity_all_GeV.max()), 200)
+AOm_trinity_all = log_interp(E_trinity_new, trinity_all_GeV, trinity_all_ap_m2sr)
+AOm_trinity_ve = log_interp(E_trinity_new, trinity_ve_GeV, trinity_ve_ap_m2sr)
 
-# Glashow for trinity
-p_vtau_trinity = log_interp(E_trinity_interp, E_tambo, p_vtau)
-valid = p_vtau_trinity > 0
-A_trinity_e = np.full_like(A_trinity_interp, np.nan)
-A_trinity_e[valid] = A_trinity_interp[valid] / p_vtau_trinity[valid] - A_trinity_interp[valid]
+E_trinity_new, A_trinity_ve_ap, A_trinity_tau_ap = effective_area_from_aperture(
+    E_trinity_new, AOm_trinity_all, AOm_trinity_ve, 0.09126)
+
+# ### Trinity from sensitivity (kept for reference, not used)
+# E_trinity   = np.array([1e15,2e15,1e16,4e16,1e17,1e18,1e19])
+# E2Phi_trinity = np.array([1.2e-8,2.8e-9,1e-9,6e-10,5e-10,1.3e-9,8.5e-9])
+# E_trinity, A_trinity = effective_area_from_sensitivity(
+#     E_trinity, E2Phi_trinity)
+
+# E_trinity_interp = np.logspace(np.log10(E_trinity[0]), np.log10(E_trinity[-1]), 100)
+# A_trinity_interp = log_interp(E_trinity_interp, E_trinity, A_trinity)
 
 ### GRAND 200k
 E_grand   = np.array([6e16,1e17,2e17,4.6e17,4e18,4e19,1e20])
@@ -159,39 +145,18 @@ E_poemma, A_poemma = effective_area_from_sensitivity(
 E_poemma_interp = np.logspace(np.log10(E_poemma[0]), np.log10(E_poemma[-1]), 100)
 A_poemma_interp = log_interp(E_poemma_interp, E_poemma, A_poemma)
 
-## plot effective areas for TAMBO, POEMMA, Grand200k, Trinity on common grid 
-line_tambo_tau, = plt.loglog(E_tambo_interp, A_tambo_interp, label="TAMBO ντ")
-plt.loglog(E_tambo, A_tambo_e, ls="--", color=line_tambo_tau.get_color(), label="TAMBO νe")
-
-# Trinity tau (solid) and e (dashed)
-line_trinity_tau, = plt.loglog(E_trinity_interp, A_trinity_interp, label="Trinity ντ")
-plt.loglog(E_trinity_interp, A_trinity_e, ls="--", color=line_trinity_tau.get_color(), label="Trinity νe")
-
-# GRAND and POEMMA (solid)
-plt.loglog(E_grand_interp, A_grand_interp, label="GRAND 200k")
-plt.loglog(E_poemma_interp, A_poemma_interp, label="POEMMA")
-
-plt.xlabel("Energy [GeV]")
-plt.ylabel("Effective area [cm$^2$]")
-plt.title("Effective Area on Common Energy Grid")
-plt.legend()
-plt.grid(True, which="both", ls=":")
-plt.tight_layout()
-plt.show()
-
-# ------------------------  energy grid -------------------------------------
-emin =  min(E_tambo)
+# ------------------------  CSV -------------------------------------
+emin =  min(E_TAMBO_5k)
 emax = max(E_grand_interp)
 master = np.logspace(np.log10(emin), np.log10(emax), 300)
 
-## For All Earth-skimming 
+## For All Earth-skimming exps 
 A_mu_master = np.zeros(len(master))
-A_tau_master = log_interp(master, E_trinity_interp, A_trinity_interp) + log_interp(master, E_poemma_interp, A_poemma_interp) + log_interp(master, E_tambo,  A_tambo_tau)  + log_interp(master, E_grand_interp, A_grand_interp) + log_interp(master, E_auger_interp, A_auger_interp)
-A_e_master =  log_interp(master, E_tambo,  A_tambo_e)  + log_interp(master, E_trinity_interp,  A_trinity_e)  
+A_tau_master = log_interp(master, E_trinity_new, A_trinity_tau_ap) + log_interp(master, E_poemma_interp, A_poemma_interp) + log_interp(master, E_TAMBO_5k,  Eff_TAMBO_tau_5k)  + log_interp(master, E_grand_interp, A_grand_interp) + log_interp(master, E_auger_interp, A_auger_interp)
+A_e_master =  log_interp(master, E_TAMBO_5k,  Eff_TAMBO_ve_5k)  + log_interp(master, E_trinity_new,  A_trinity_ve_ap)
 
-
-# ------------------------ Save CSV ------------------------
-os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
+if os.path.dirname(OUTPUT_CSV):
+    os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 df = pd.DataFrame({
     "E_GeV": master,
     "A_mu_m2": A_mu_master,

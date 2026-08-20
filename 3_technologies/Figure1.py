@@ -44,7 +44,7 @@ def compute_radio_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux
     fmu_arr = np.array([f[1] for f in flavors], dtype=float)
     ftau_arr = np.array([f[2] for f in flavors], dtype=float)
 
-    eff8_path = os.path.join(base_dir, "effareas8.csv")
+    eff8_path = os.path.join(base_dir, "effareas_8.csv")
     E, A_NC, A_mu, A_tau, A_e = read_effarea_csv_radio(eff8_path)
     edges = geometric_edges_from_centers(E)
 
@@ -109,7 +109,7 @@ def compute_tau_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_m
     nz = cnt_per_bin > 0
     p_vebar_binned[nz] = sum_per_bin[nz] / cnt_per_bin[nz]
 
-    eff9_path = os.path.join(base_dir, "effareas9.csv")
+    eff9_path = os.path.join(base_dir, "effareas_9.csv")
     Et, A_mut, A_taut, A_et = read_effarea_csv(eff9_path)
     edgest = geometric_edges_from_centers(Et)
 
@@ -169,9 +169,9 @@ def main():
         fe_arr=fe_arr,
         fmu_arr=fmu_arr,
         ftau_arr=ftau_arr,
-        captions=("(1) In-Ice Radio & Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
+        captions=("(1) In-Ice Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
         ),
-        savepath="MC_outputs/figure1.png",
+        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure122k.png",
     )
 
 
