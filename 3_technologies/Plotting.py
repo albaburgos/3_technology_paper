@@ -409,15 +409,15 @@ def plot_three_ternaries(
         axs = [axs] 
 
     levels_inc = np.sort([np.log(1.0 - 0.95), np.log(1.0 - 0.68)]) 
-    color_scheme = {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35}
-    # color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
+    # color_scheme = {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35}
+    color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
     # color_scheme= {"c68": "#228b22", "a68": 0.25, "c95": "#90ee90", "a95": 0.35} #green
 
     handles_top = [
         Patch(facecolor=color_scheme["c68"], edgecolor='none', alpha=color_scheme["a68"], label='68% CL'),
         Patch(facecolor=color_scheme["c95"], edgecolor='none', alpha=color_scheme["a95"], label='95% CL'),
-        Line2D([0], [0], marker='*', markersize=16, markerfacecolor='C0', markeredgecolor='black',
-               linestyle='None', label='Best fit'),
+        # Line2D([0], [0], marker='*', markersize=16, markerfacecolor='C0', markeredgecolor='black',
+        #        linestyle='None', label='Best fit'),
     ]
     handles_points = []
 
@@ -464,13 +464,17 @@ def plot_three_ternaries(
                    linestyle='None', label=_fmt_label(name, pfe, pfmu, pftau))
         )
 
-    handles_all = handles_top + handles_points
-
     fig.legend(
-        handles=handles_all,
-        loc="upper center",
+        handles=handles_top,
+        loc="upper right",
         bbox_to_anchor=(0.5, 1.04),
-        ncol=2,
+        frameon=True, fancybox=True, framealpha=0.98,
+        edgecolor="black", facecolor="white",
+    )
+    fig.legend(
+        handles=handles_points,
+        loc="upper left",
+        bbox_to_anchor=(0.5, 1.04),
         frameon=True, fancybox=True, framealpha=0.98,
         edgecolor="black", facecolor="white",
     )

@@ -138,7 +138,7 @@ def main():
     coarse_edges = np.logspace(8, 10, int((10 - 8) / BIN_WIDTH_LOG10) + 1, base=10)
     fe0, fmu0, ftau0 = 0.30, 0.36, 0.34
 
-    energies_mid, flux_mid = build_flux_hypothesis("mid")
+    energies_mid, flux_mid = build_flux_hypothesis("low")
 
     helpers.energies_mid = energies_mid
     helpers.fluxMid = flux_mid
@@ -171,7 +171,7 @@ def main():
         ftau_arr=ftau_arr,
         captions=("(1) In-Ice Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
         ),
-        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure122k.png",
+        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure7c.png",
     )
 
 
