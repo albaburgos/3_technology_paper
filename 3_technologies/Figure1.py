@@ -109,7 +109,7 @@ def compute_tau_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_m
     nz = cnt_per_bin > 0
     p_vebar_binned[nz] = sum_per_bin[nz] / cnt_per_bin[nz]
 
-    eff9_path = os.path.join(base_dir, "effareas_9.csv")
+    eff9_path = os.path.join(base_dir, "effareas_9_10kGRAND.csv")
     Et, A_mut, A_taut, A_et = read_effarea_csv(eff9_path)
     edgest = geometric_edges_from_centers(Et)
 
@@ -171,7 +171,7 @@ def main():
         ftau_arr=ftau_arr,
         captions=("(1) In-Ice Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
         ),
-        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure7a.png",
+        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure7c_10kgrand.png",
     )
 
 

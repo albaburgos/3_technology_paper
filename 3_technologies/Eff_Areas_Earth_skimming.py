@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from Helpers import log_interp
 
 
-OUTPUT_CSV = "/Users/albaburgosmondejar/3_technology_paper/3_technologies/effareas_9_50kGRAND.csv"
+OUTPUT_CSV = "/Users/albaburgosmondejar/3_technology_paper/3_technologies/effareas_9_10kGRAND.csv"
 SEC_PER_YEAR = 365.25 * 24 * 3600.0
 GEV_PER_PEV = 1e6
 
@@ -171,7 +171,7 @@ A_tau_master = (
     log_interp(master, E_trinity_new, A_trinity_tau_ap)
     + log_interp(master, E_TAMBO_5k, Eff_TAMBO_tau_5k)
     + log_interp(master, E_poemma_interp, A_poemma_interp)
-    + 0.25*log_interp(master, E_grand_interp, A_grand_interp)
+    + 0.05*log_interp(master, E_grand_interp, A_grand_interp)
     + log_interp(master, E_auger_interp, A_auger_interp)
 )
 # nu_e-bar (Glashow): aperture-based only.
