@@ -23,8 +23,15 @@ def geometric_mid_flux(e_target, e_ta, f_ta, e_au, f_au):
     return np.sqrt(f_ta_i * f_au_i)
 
 
+# Benchmark UHE flux hypotheses, digitised from Fig. 7 of Coleman et al.
+# (arXiv:2402.02432).  Each digitised curve is the *total all-flavor* flux used
+# there: the IceCube nu_mu 9.5-yr through-going-track power law, multiplied by 3
+# for all flavors and extrapolated to ultra-high energies, plus a cosmogenic
+# component from fits to UHECR data ("high"/"TA": Telescope Array fit;
+# "low"/"Au": Auger fit with 10 % protons). 
+# Units: energies in GeV; E^2 Phi in GeV cm^-2 s^-1 sr^-1.
 def build_flux_triplet():
-    # Optimistic (TA)
+    # High-flux benchmark: IceCube tracks (x3) + TA cosmogenic, all flavors
     e2phi_ta = np.array(
         [3 * 3e-8, 3 * 1.5e-8, 18e-9, 15e-9, 1e-8, 9e-9, 8e-9, 6e-9, 5e-9, 4.5e-9, 7e-9, 9e-9, 1e-8, 8e-9, 5e-9, 2e-9, 9e-10, 3e-10],
         dtype=float,
@@ -33,9 +40,9 @@ def build_flux_triplet():
         [1.6e13, 1e14, 1e15, 2e15, 5e15, 7e15, 1e16, 2.5e16, 5e16, 1.4e17, 4e17, 7e17, 1.5e18, 4e18, 7e18, 1.5e19, 2.5e19, 7e19],
         dtype=float,
     ) * 1e-9
-    phi_ta = e2phi_ta / (energies_ta ** 2)
+    flux_ta = e2phi_ta / (energies_ta ** 2)
 
-    # Pessimistic (Au)
+    # Low-flux benchmark: IceCube tracks (x3) + Auger (10 % p) cosmogenic, all flavors
     e2phi_au = np.array(
         [3 * 3e-8, 3 * 1.5e-8, 18e-9, 15e-9, 1e-8, 9e-9, 8e-9, 6e-9, 5e-9, 4e-9, 3.5e-9, 3.4e-9, 3e-9, 2.3e-9, 1.6e-9, 1.1e-9, 9e-10, 5e-10, 4e-10],
         dtype=float,
@@ -44,16 +51,9 @@ def build_flux_triplet():
         [1.6e13, 1e14, 1e15, 2e15, 5e15, 7e15, 1e16, 2.5e16, 5e16, 8e16, 3e17, 6e17, 1e18, 2e18, 4e18, 6e18, 9e18, 2e19, 4e19],
         dtype=float,
     ) * 1e-9
-    phi_au = e2phi_au / (energies_au ** 2)
+    flux_au = e2phi_au / (energies_au ** 2)
 
-    flux_interp_ta = flux(energies_ta, 4.4e-18, 2.36, E0)
-    flux_interp_au = flux(energies_au, 4.4e-18, 2.36, E0)
-    flux_mese_ta = flux(energies_ta, 2.06e-18, 2.46, E0)
-    flux_mese_au = flux(energies_au, 2.06e-18, 2.46, E0)
-
-    flux_ta = flux_mese_ta + np.abs(flux_interp_ta - phi_ta)
-    flux_au = flux_mese_au + np.abs(flux_interp_au - phi_au)
-
+    # Intermediate: geometric mean of the two benchmarks on the union grid
     energies_mid = np.unique(np.concatenate([energies_ta, energies_au])).astype(float)
     flux_mid = geometric_mid_flux(energies_mid, energies_ta, flux_ta, energies_au, flux_au)
     return energies_au, flux_au, energies_mid, flux_mid, energies_ta, flux_ta

@@ -64,9 +64,9 @@ def compute_radio_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux
         ll_radio[j] = loglike_combined(
             E, edges, A_NC, A_e, A_mu, A_tau, coarse_edges,
             fe, fmu, ftau, fe0, fmu0, ftau0,
-            Nobs_total=nobs_total.astype(int),
-            Nobs_ML=np.rint(nobs_ml).astype(int),
-            Nobs_mult=np.rint(nobs_mult).astype(int),
+            Nobs_total=nobs_total,
+            Nobs_ML=nobs_ml,
+            Nobs_mult=nobs_mult,
             T_vec=truthx,
             F_vec=0.02 * np.ones_like(truthx),
             rmu_vec=mux,
@@ -124,8 +124,8 @@ def compute_tau_ll(flavors, coarse_edges, fe0, fmu0, ftau0, energies_mid, flux_m
         ll_tau[j] = loglike_combined_tau(
             Et, edgest, A_et, A_mut, A_taut, coarse_edges,
             fe, fmu, ftau, fe0, fmu0, ftau0,
-            base_tau.astype(int),
-            np.rint(glashow).astype(int),
+            base_tau,
+            glashow,
             p_vebar_binned,
             energies_mid,
             flux_mid,
@@ -138,7 +138,7 @@ def main():
     coarse_edges = np.logspace(8, 10, int((10 - 8) / BIN_WIDTH_LOG10) + 1, base=10)
     fe0, fmu0, ftau0 = 0.30, 0.36, 0.34
 
-    energies_mid, flux_mid = build_flux_hypothesis("low")
+    energies_mid, flux_mid = build_flux_hypothesis("high")
 
     helpers.energies_mid = energies_mid
     helpers.fluxMid = flux_mid
@@ -171,7 +171,7 @@ def main():
         ftau_arr=ftau_arr,
         captions=("(1) In-Ice Radio $10^{2}$–$10^{4}$ PeV ", "(2) Earth-Skimming $10^{2}$–$10^{4}$ PeV ", "(3) All Technologies $10^{2}$–$10^{4}$ PeV"
         ),
-        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure7c.png",
+        savepath="/Users/albaburgosmondejar/3_technology_paper/MC_outputs/figure7a.png",
     )
 
 

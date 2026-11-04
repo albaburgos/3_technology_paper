@@ -5,6 +5,7 @@ from typing import List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import Flux 
 
 OMEGA = 4 * np.pi
 T_EXPOSURE = 10 * 365.25 * 24 * 3600.0
@@ -45,6 +46,17 @@ def read_eff_area_csv_gen(path: str):
     return E, track_triplet, casc_triplet
 
 
+def _read_numeric_table(path: str) -> pd.DataFrame:
+    """Read a numeric CSV written with or without a header line (comment lines start with #)."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f'CSV "{path}" not found.')
+    df = pd.read_csv(path, comment="#", header=None)
+    try:
+        return df.astype(float)
+    except (ValueError, TypeError):
+        return pd.read_csv(path, comment="#", header=0).astype(float)
+
+
 def read_effarea_csv_stacked(path: str):
     """
     use for effareas MESE21 MESE 11
@@ -58,13 +70,7 @@ def read_effarea_csv_stacked(path: str):
                  (A_mu_2, A_tau_2, A_e_2),
                  (A_mu_3, A_tau_3, A_e_3)]
     """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f'CSV "{path}" not found.')
-
-    try:
-        df = pd.read_csv(path, comment="#", header=None)
-    except Exception:
-        df = pd.read_csv(path, comment="#")
+    df = _read_numeric_table(path)
 
     if df.shape[1] != 10:
         raise ValueError(
@@ -180,8 +186,8 @@ def _normalize_bary(fe, fmu, ftau):
 
 
 def read_effarea_csv_radio(path: str):
-
-    df = pd.read_csv(path, comment="#", header=None)
+    """Columns: E_GeV, A_NC, A_mu, A_tau, A_e (cm^2); optional header line."""
+    df = _read_numeric_table(path)
 
     E = np.asarray(df.iloc[:, 0], dtype=float)
     A_NC = np.asarray(df.iloc[:, 1], dtype=float)
@@ -210,20 +216,15 @@ def make_log_bins(edges: np.ndarray, bin_width_log10: float) -> np.ndarray:
     b = np.unique(raw)
     return b
 
-def integrate_bin_I(edges: np.ndarray, centers: np.ndarray, A: np.ndarray,
-                    Emin: float, Emax: float, energies_Au, flux) -> float:
+def integrate_bin_I(edges, centers, A, Emin, Emax, energies_Au, flux) -> float:
     xp = np.asarray(energies_Au, dtype=float).ravel()
-    fp = np.asarray(flux,        dtype=float).ravel()
-    total = 0.0
-    for j in range(len(centers)):
-        total_flux = np.interp(float(centers[j]), xp, fp)
-        a = edges[j]
-        b = edges[j+1]
-        L = max(a, Emin)
-        U = min(b, Emax)
-        if L < U:
-            total += A[j] * total_flux * (U-L) * OMEGA * T_EXPOSURE
-    return float(total)
+    fp = np.asarray(flux, dtype=float).ravel()
+    order = np.argsort(xp)
+    fl = np.exp(np.interp(np.log(centers), np.log(xp[order]), np.log(fp[order])))
+    L = np.maximum(edges[:-1], Emin)
+    U = np.minimum(edges[1:], Emax)
+    w = np.clip(U - L, 0.0, None)
+    return float(np.sum(A * fl * w) * OMEGA * T_EXPOSURE)
 
 def generate_flavor_grid(step: float = 0.2) -> List[Tuple[float, float, float]]:
     vals = np.round(np.arange(0.0, 1.0 + 1e-9, step), 10)
@@ -252,12 +253,10 @@ def save_counts_csv(coarse_edges: np.ndarray, counts: np.ndarray, path: str):
     df.to_csv(path, index=False)
 
 def read_effarea_csv(path: str):
-    try:
-        df = pd.read_csv(path, comment="#", header=None)
-        if df.shape[1] < 4:
-            raise ValueError
-    except Exception:
-        df = pd.read_csv(path, comment="#")
+    """Columns: E_GeV, A_mu, A_tau, A_e (cm^2); optional header line."""
+    df = _read_numeric_table(path)
+    if df.shape[1] < 4:
+        raise ValueError(f"Expected at least 4 columns in {path}, got {df.shape[1]}.")
 
     E = np.asarray(df.iloc[:, 0], dtype=float)
     A_mu = np.asarray(df.iloc[:, 1], dtype=float)

@@ -185,8 +185,8 @@ os.makedirs(os.path.dirname(OUTPUT_CSV), exist_ok=True)
 df = pd.DataFrame({
     "E_GeV": E_interp,
     "A_NC_m2": A_NC_interp+A_all_NC,
-    "A_mu_m2": A_mu_interp+A_all_tau,
-    "A_tau_m2": A_tau_interp+A_all_mu,
+    "A_mu_m2": A_mu_interp+A_all_mu,
+    "A_tau_m2": A_tau_interp+A_all_tau,
     "A_e_m2": A_e_interp+A_all_e ,
 })
 df.to_csv(OUTPUT_CSV, index=False)

@@ -58,7 +58,20 @@ def log_interp(x, xp, fp):
     y[np.isnan(y)] = 0.0
     return y
 
-def effective_area_from_sensitivity(E_pts, E2Phi_pts):
+# Snowmass Fig. 18 (arXiv:2203.08096) quotes *all-flavor* 90% CL differential sensitivities
+# (1:1:1 flavor ratio, decade bins).  The earth-skimming experiments converted below detect
+# nu_tau only, so the nu_tau flux behind an all-flavor sensitivity is E^2 Phi / N_FLAVORS and the
+# nu_tau effective area that yields mu90 events is N_FLAVORS times the naive conversion.
+N_FLAVORS = 3.0
+
+def effective_area_from_sensitivity(E_pts, E2Phi_pts, flavor_factor=N_FLAVORS):
+    """
+    All-sky-averaged effective area [cm^2] from a 90% CL differential sensitivity
+    E^2 Phi [GeV cm^-2 s^-1 sr^-1] quoted per decade of energy for T_years of exposure.
+
+    flavor_factor: N_FLAVORS (default) for an all-flavor sensitivity read by a
+    single-flavor (nu_tau) detector; 1.0 if the sensitivity is already per flavor.
+    """
     T_years=10
     mu90 =2.44
     DeltaOmega=4*np.pi
@@ -77,7 +90,7 @@ def effective_area_from_sensitivity(E_pts, E2Phi_pts):
     edges[-1] = E_GeV[-1] * np.sqrt(E_GeV[-1] / E_GeV[-2])
 
     T_sec = T_years * SEC_PER_YEAR
-    Aeff_cm2 = mu90 *E_GeV / (T_sec * DeltaOmega * E2Phi * np.log(10) )
+    Aeff_cm2 = flavor_factor * mu90 * E_GeV / (T_sec * DeltaOmega * E2Phi * np.log(10))
     return E_GeV, Aeff_cm2
 
 def effective_area_from_aperture(E_grid, Aperture_pts_tau, Aperture_pts_e, angle):

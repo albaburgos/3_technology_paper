@@ -172,7 +172,7 @@ def main() -> None:
     ax.set_xlabel("Energy (PeV)")
     ax.set_xlim(1e4 / GEV_PER_PEV, 8e10 / GEV_PER_PEV)
     ax.set_ylim(1e-10, 5e-6)
-    ax.set_ylabel(r"$E^2 \Phi$ (GeV cm$^{-2}$ s$^{-1}$ sr$^{-1}$)")
+    ax.set_ylabel(r"All-flavor $E^2 \Phi$ (GeV cm$^{-2}$ s$^{-1}$ sr$^{-1}$)")
     ax.grid(True, which="both", alpha=0.25)
     ax.legend(loc="lower left", frameon=True)
 

@@ -128,7 +128,7 @@ def plot_three_ternaries_95pairs(
     fig_h = 7.5
     fig, axs = plt.subplots(1, n_panels, figsize=(fig_w, fig_h), constrained_layout=False)
 
-    level95 = np.log(1.0 - 0.68)
+    level68 = np.log(1.0 - 0.68)
 
     color_schemes = {
         "blue":  {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35},
@@ -164,14 +164,14 @@ def plot_three_ternaries_95pairs(
 
                 ax.tricontourf(
                     tri, z_plot,
-                    levels=[level95, np.max(z_plot)],
+                    levels=[level68, np.max(z_plot)],
                     colors=[scheme["c95"]],
                     alpha=fill_alpha,
                     zorder=0,
                 )
                 ax.tricontour(
                     tri, z_plot,
-                    levels=[level95],
+                    levels=[level68],
                     colors=[scheme["c68"]],
                     linewidths=2.0,
                     linestyles=[ls],
@@ -206,14 +206,14 @@ def plot_three_ternaries_95pairs(
 
                 ax.tricontourf(
                     tri, z_plot,
-                    levels=[level95, np.max(z_plot)],
+                    levels=[level68, np.max(z_plot)],
                     colors=[scheme["c95"]],
                     alpha=scheme["a95"],
                     zorder=0,
                 )
                 ax.tricontour(
                     tri, z_plot,
-                    levels=[level95],
+                    levels=[level68],
                     colors=[scheme["c68"]],
                     linewidths=2.0,
                     linestyles=[ls],
@@ -410,8 +410,8 @@ def plot_three_ternaries(
 
     levels_inc = np.sort([np.log(1.0 - 0.95), np.log(1.0 - 0.68)]) 
     # color_scheme = {"c68": "#1e90ff", "a68": 0.25, "c95": "#add8e6", "a95": 0.35}
-    color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
-    # color_scheme= {"c68": "#228b22", "a68": 0.25, "c95": "#90ee90", "a95": 0.35} #green
+    # color_scheme= {"c68": "#ff69b4", "a68": 0.25, "c95": "#ffb6c1", "a95": 0.35} #pink
+    color_scheme= {"c68": "#228b22", "a68": 0.25, "c95": "#90ee90", "a95": 0.35} #green
 
     handles_top = [
         Patch(facecolor=color_scheme["c68"], edgecolor='none', alpha=color_scheme["a68"], label='68% CL'),

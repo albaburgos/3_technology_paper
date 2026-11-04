@@ -25,7 +25,7 @@ def obs_events_radio(E: np.ndarray, edges: np.ndarray,A_NC, A_e, A_mu, A_tau,
         counts_all = Ie*fe0+Imu*fmu0+Itau*ftau0+INC
 
         counts.append(counts_all)
-        countsML.append(Ie*fe0* Truth[i] + ((1-Ie*fe0))*0.02)
+        countsML.append(Ie*fe0*Truth[i] + (counts_all - Ie*fe0)*0.02)
         countsmulti.append(Imu*(fmu0)*Mu[i]+Itau*(ftau0)*Tau[i])
         countsvmvt.append(Imu*fmu0+Itau*ftau0)
 
@@ -41,7 +41,7 @@ def obs_events_tau(E: np.ndarray, edges: np.ndarray, A_e: np.ndarray, A_mu: np.n
         Ie   = integrate_bin_I(edges, E, A_e,  Emin, Emax, energies,flux)
         Itau = integrate_bin_I(edges, E, A_tau, Emin, Emax, energies,flux)
         counts.append(Itau*ftau0+ Ie*fe0)
-        counts_glash.append(Ie*fe0)
+        counts_glash.append(Ie*fe0*p_glash[i])
 
     return np.asarray(counts), np.asarray(counts_glash)
 
